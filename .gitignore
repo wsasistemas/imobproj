@@ -44,3 +44,9 @@ next-env.d.ts
 # Claude Code / ferramentas locais
 .remember/
 .claude/settings.local.json
+.playwright-mcp/
+
+# Supabase CLI local (contém chaves do ambiente local)
+supabase/.temp/
+supabase/.branches/
+supabase/.env
