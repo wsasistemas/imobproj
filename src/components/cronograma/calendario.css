@@ -1,0 +1,220 @@
+/* =====================================================================================================
+ * Cronograma · FullCalendar no visual do Google Agenda, com os tokens do tema (claro e escuro).
+ * O FullCalendar 6 injeta o CSS base dele; aqui só ajustamos variáveis e detalhes, sempre escopado em
+ * .cron-calendario para não vazar para outras telas.
+ * ===================================================================================================== */
+.cron-calendario .fc {
+  --fc-border-color: var(--border-soft);
+  --fc-page-bg-color: var(--surface);
+  --fc-neutral-bg-color: var(--table-head);
+  --fc-neutral-text-color: var(--muted-text);
+  --fc-today-bg-color: color-mix(in oklab, var(--primary) 5%, transparent);
+  --fc-now-indicator-color: var(--sys-red);
+  --fc-event-border-color: transparent;
+  --fc-event-text-color: #fff;
+  --fc-highlight-color: color-mix(in oklab, var(--primary) 14%, transparent);
+  --fc-non-business-color: transparent;
+  --fc-small-font-size: 11.5px;
+  font-size: 13px;
+  color: var(--text);
+}
+
+/* Sem bordas pesadas: tira a moldura externa e deixa só as linhas da grade */
+.cron-calendario .fc .fc-scrollgrid {
+  border: 0;
+}
+.cron-calendario .fc .fc-scrollgrid-section > th,
+.cron-calendario .fc .fc-scrollgrid-section > td {
+  border-right: 0;
+}
+.cron-calendario .fc th {
+  border-left-color: transparent;
+  border-right-color: transparent;
+}
+.cron-calendario .fc .fc-col-header-cell {
+  padding: 8px 0 6px;
+  font-weight: 500;
+  border-bottom-color: var(--border-soft);
+}
+.cron-calendario .fc .fc-col-header-cell-cushion {
+  padding: 0;
+  color: var(--muted-text);
+  text-decoration: none;
+}
+
+/* Cabeçalho do dia (semana/dia): "SEG" pequeno e o número grande, hoje em círculo azul */
+.cron-cab-dia {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.cron-cab-semana {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted-text);
+}
+.cron-cab-numero {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--text);
+}
+.cron-cab-numero--hoje {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+.cron-calendario .fc .fc-day-today .cron-cab-semana {
+  color: var(--primary);
+}
+
+/* Grade de horas */
+.cron-calendario .fc .fc-timegrid-slot {
+  height: 44px;
+  border-bottom: 0;
+}
+.cron-calendario .fc .fc-timegrid-slot-minor {
+  border-top-style: none;
+}
+.cron-calendario .fc .fc-timegrid-slot-label {
+  border: 0;
+  vertical-align: top;
+}
+.cron-calendario .fc .fc-timegrid-slot-label-cushion {
+  position: relative;
+  top: -0.7em;
+  padding-right: 10px;
+  font-size: 11px;
+  color: var(--muted-text);
+}
+.cron-calendario .fc .fc-timegrid-axis-cushion {
+  font-size: 11px;
+  color: var(--muted-text);
+}
+.cron-calendario .fc .fc-timegrid-col.fc-day-today {
+  background: var(--fc-today-bg-color);
+}
+.cron-calendario .fc .fc-timegrid-divider {
+  padding: 0 0 2px;
+  background: var(--border-soft);
+  border: 0;
+}
+
+/* Linha da hora atual: vermelha, com bolinha à esquerda (como no Google Agenda) */
+.cron-calendario .fc .fc-timegrid-now-indicator-line {
+  border-width: 2px 0 0;
+}
+.cron-calendario .fc .fc-timegrid-now-indicator-line::before {
+  content: "";
+  position: absolute;
+  left: -6px;
+  top: -7px;
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: var(--fc-now-indicator-color);
+}
+.cron-calendario .fc .fc-timegrid-now-indicator-arrow {
+  display: none;
+}
+
+/* Mês */
+.cron-calendario .fc .fc-daygrid-day-top {
+  justify-content: center;
+  padding-top: 4px;
+}
+.cron-calendario .fc .fc-daygrid-day-number {
+  display: grid;
+  place-items: center;
+  min-width: 26px;
+  height: 26px;
+  padding: 0 4px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text);
+  text-decoration: none;
+}
+.cron-calendario .fc .fc-day-today.fc-daygrid-day {
+  background: transparent;
+}
+.cron-calendario .fc .fc-day-today .fc-daygrid-day-number {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+.cron-calendario .fc .fc-day-other .fc-daygrid-day-number {
+  color: var(--muted-text);
+  opacity: 0.7;
+}
+.cron-calendario .fc .fc-daygrid-more-link {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--muted-text);
+}
+.cron-calendario .fc .fc-popover {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: var(--shadow-pop);
+  overflow: hidden;
+}
+.cron-calendario .fc .fc-popover-header {
+  background: var(--table-head);
+  color: var(--text);
+}
+
+/* Eventos: blocos arredondados com a cor do tipo (fundo vem do inline style: var(--sys-*)) */
+.cron-calendario .fc .cron-ev {
+  border-radius: 6px;
+  border-width: 0;
+  font-size: 12px;
+  font-weight: 500;
+  box-shadow: none;
+}
+.cron-calendario .fc .fc-timegrid-event.cron-ev {
+  border-left: 3px solid color-mix(in oklab, #000 18%, transparent);
+  padding: 1px 2px;
+}
+.cron-calendario .fc .fc-timegrid-event-harness-inset .fc-timegrid-event {
+  box-shadow: 0 0 0 1px var(--surface);
+}
+.cron-calendario .fc .fc-daygrid-block-event.cron-ev {
+  margin-top: 1px;
+  padding: 0 4px;
+}
+.cron-calendario .fc .fc-event-title {
+  font-weight: 500;
+}
+.cron-calendario .fc .fc-event-time {
+  font-weight: 400;
+  opacity: 0.92;
+}
+/* Mês: evento com horário aparece como item de lista (bolinha + texto), igual ao Google */
+.cron-calendario .fc .fc-daygrid-dot-event.cron-ev {
+  color: var(--text);
+  background: transparent;
+  border-radius: 6px;
+}
+.cron-calendario .fc .fc-daygrid-dot-event.cron-ev:hover {
+  background: var(--muted);
+}
+.cron-calendario .fc .fc-daygrid-dot-event .fc-event-title {
+  font-weight: 500;
+}
+.cron-calendario .fc .fc-event:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+.cron-calendario .fc .fc-event-dragging {
+  opacity: 0.85;
+  box-shadow: var(--shadow-pop);
+}
+.cron-calendario .fc .fc-highlight {
+  background: var(--fc-highlight-color);
+}

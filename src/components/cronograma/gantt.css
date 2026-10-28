@@ -1,0 +1,344 @@
+/* =====================================================================================================
+ * Cronograma · Gantt (CSS grid próprio). Tokens do tema; barra crítica em vermelho (--sys-red).
+ * Variáveis definidas no componente: --tabela (largura da tabela), --tempo (largura da linha do tempo),
+ * --sem (largura de uma semana).
+ * ===================================================================================================== */
+.cron-gantt {
+  --linha: 36px;
+  --cor-tarefa: var(--sys-blue);
+  --cor-critica: var(--sys-red);
+  position: relative;
+  overflow: auto;
+  max-height: min(72vh, 900px);
+  overscroll-behavior: contain;
+}
+.cron-gantt-grade {
+  position: relative;
+  width: calc(var(--tabela) + var(--tempo));
+  font-size: 12.5px;
+}
+
+/* Linhas: tabela fixa à esquerda + linha do tempo */
+.cron-g-cab,
+.cron-g-linha {
+  display: grid;
+  grid-template-columns: var(--tabela) var(--tempo);
+}
+.cron-g-esq {
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 112px 96px 44px;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+}
+.cron-g-tempo {
+  position: relative;
+}
+
+/* Cabeçalho (meses + semanas), fixo no topo */
+.cron-g-cab {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: var(--table-head);
+  border-bottom: 1px solid var(--border);
+}
+.cron-g-cab-esq {
+  z-index: 6;
+  align-self: stretch;
+  background: var(--table-head);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted-text);
+}
+.cron-g-cab-tempo {
+  height: 52px;
+}
+.cron-g-meses {
+  position: relative;
+  height: 24px;
+  border-bottom: 1px solid var(--border-soft);
+}
+.cron-g-meses > span {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  overflow: hidden;
+  white-space: nowrap;
+  border-left: 1px solid var(--border);
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text);
+  text-transform: capitalize;
+}
+.cron-g-semanas {
+  display: grid;
+  grid-auto-columns: var(--sem);
+  grid-auto-flow: column;
+  height: 28px;
+}
+.cron-g-semanas > span {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-left: 5px;
+  border-left: 1px solid var(--border-soft);
+  font-size: 10px;
+  line-height: 1.15;
+  color: var(--muted-text);
+  white-space: nowrap;
+}
+.cron-g-semanas b {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+/* Corpo */
+.cron-g-corpo {
+  position: relative;
+}
+.cron-g-linha {
+  height: var(--linha);
+  border-bottom: 1px solid var(--border-soft);
+}
+.cron-g-linha:hover .cron-g-esq,
+.cron-g-linha:hover .cron-g-tempo {
+  background-color: color-mix(in oklab, var(--primary) 4%, var(--surface));
+}
+.cron-g-linha .cron-g-tempo {
+  background-image: repeating-linear-gradient(
+    90deg,
+    transparent 0 calc(var(--sem) - 1px),
+    var(--border-soft) calc(var(--sem) - 1px) var(--sem)
+  );
+}
+.cron-g-linha--fase .cron-g-esq {
+  background: var(--table-head);
+}
+
+/* Barras */
+.cron-g-barra {
+  position: absolute;
+  top: 8px;
+  height: 14px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: color-mix(in oklab, var(--cor-tarefa) 28%, var(--surface));
+  outline-offset: 2px;
+}
+.cron-g-barra > i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--cor-tarefa);
+}
+.cron-g-barra--critica {
+  background: color-mix(in oklab, var(--cor-critica) 26%, var(--surface));
+  box-shadow: inset 0 0 0 1.5px var(--cor-critica);
+}
+.cron-g-barra--critica > i {
+  background: var(--cor-critica);
+}
+.cron-g-fase {
+  position: absolute;
+  top: 12px;
+  height: 6px;
+  border-radius: 1px;
+  background: var(--text);
+}
+.cron-g-fase::before,
+.cron-g-fase::after {
+  content: "";
+  position: absolute;
+  top: 6px;
+  border-bottom: 5px solid transparent;
+}
+.cron-g-fase::before {
+  left: 0;
+  border-left: 5px solid var(--text);
+}
+.cron-g-fase::after {
+  right: 0;
+  border-right: 5px solid var(--text);
+}
+.cron-g-marco {
+  position: absolute;
+  top: 8px;
+  width: 14px;
+  height: 14px;
+  rotate: 45deg;
+  border-radius: 2px;
+  background: var(--text);
+}
+.cron-g-marco--critico {
+  background: var(--cor-critica);
+}
+.cron-g-base {
+  position: absolute;
+  top: 26px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--sys-gray);
+  opacity: 0.75;
+}
+.cron-g-base-marco {
+  position: absolute;
+  top: 25px;
+  width: 8px;
+  height: 8px;
+  rotate: 45deg;
+  border: 1.5px solid var(--sys-gray);
+}
+.cron-g-barra:focus-visible,
+.cron-g-fase:focus-visible,
+.cron-g-marco:focus-visible {
+  outline: 2px solid var(--ring);
+}
+
+/* Hoje */
+.cron-g-hoje {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 2;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--sys-red);
+  pointer-events: none;
+}
+.cron-g-hoje > i {
+  position: absolute;
+  top: 2px;
+  left: 4px;
+  padding: 0 4px;
+  border-radius: 3px;
+  background: var(--sys-red);
+  color: #fff;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 700;
+  line-height: 15px;
+}
+
+/* Legenda (reaproveita as classes das barras em tamanho pequeno) */
+.cron-leg {
+  /* a legenda fica fora de .cron-gantt: repete as cores das barras */
+  --cor-tarefa: var(--sys-blue);
+  --cor-critica: var(--sys-red);
+  position: relative !important;
+  top: 0 !important;
+  display: inline-block;
+  width: 26px;
+}
+.cron-leg.cron-g-barra {
+  height: 10px;
+}
+.cron-leg.cron-g-fase {
+  height: 5px;
+}
+.cron-leg.cron-g-fase::before,
+.cron-leg.cron-g-fase::after {
+  display: none;
+}
+.cron-leg.cron-g-marco {
+  width: 10px;
+  height: 10px;
+  margin: 0 4px;
+}
+.cron-leg.cron-g-base {
+  height: 4px;
+}
+.cron-leg-hoje {
+  width: 2px;
+  height: 14px;
+  background: var(--sys-red);
+}
+
+.cron-so-impressao {
+  display: none;
+}
+
+/* =====================================================================================================
+ * Exportar PDF (window.print): imprime só o Gantt, em paisagem, escalado para caber na largura.
+ * Tudo que não contém .cron-impressao some; os ancestrais dele perdem layout (menu, abas, paddings).
+ * ===================================================================================================== */
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 10mm;
+  }
+  html,
+  body {
+    background: #fff !important;
+  }
+  body *:not(:has(.cron-impressao)):not(.cron-impressao):not(.cron-impressao *) {
+    display: none !important;
+  }
+  body *:has(.cron-impressao) {
+    display: block !important;
+    position: static !important;
+    width: auto !important;
+    max-width: none !important;
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    overflow: visible !important;
+    box-shadow: none !important;
+    background: none !important;
+    transform: none !important;
+  }
+  .cron-impressao {
+    /* cores do tema claro na impressão */
+    --surface: #fff;
+    --table-head: #f6f5f2;
+    --text: #1f2430;
+    --muted-text: #5b6170;
+    --border: #d9d6cf;
+    --border-soft: #ebe8e2;
+    --primary: #2f6db5;
+    --sys-blue: #007aff;
+    --sys-red: #ff3b30;
+    --sys-gray: #8e8e93;
+    color: var(--text);
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .cron-impressao .cron-sem-impressao {
+    display: none !important;
+  }
+  .cron-impressao .cron-so-impressao {
+    display: block;
+    margin-bottom: 4px;
+  }
+  .cron-impressao [data-slot="card"] {
+    border: 1px solid var(--border);
+    box-shadow: none;
+    overflow: visible;
+  }
+  .cron-gantt {
+    max-height: none;
+    overflow: visible;
+  }
+  .cron-gantt-grade {
+    zoom: var(--cron-zoom, 1);
+  }
+  .cron-g-cab,
+  .cron-g-esq {
+    position: static;
+  }
+  .cron-g-linha {
+    break-inside: avoid;
+  }
+}

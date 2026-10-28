@@ -1,0 +1,89 @@
+# Configuração do Supabase local (supabase start) para o IMOBPROJ.
+# Baseado no formato gerado por `supabase init`; só o essencial para rodar local.
+project_id = "imobproj"
+
+[api]
+enabled = true
+port = 56321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 56322
+shadow_port = 56320
+major_version = 17
+
+[db.pooler]
+enabled = false
+port = 56329
+pool_mode = "transaction"
+default_pool_size = 20
+max_client_conn = 100
+
+[db.migrations]
+enabled = true
+schema_paths = []
+
+[db.seed]
+enabled = true
+sql_paths = ["./seed.sql"]
+
+[realtime]
+enabled = true
+
+[studio]
+enabled = true
+port = 56323
+api_url = "http://127.0.0.1"
+
+# Servidor de e-mail de teste (convites, recuperação de senha)
+[inbucket]
+enabled = true
+port = 56324
+
+[storage]
+enabled = true
+file_size_limit = "50MiB"
+
+[auth]
+enabled = true
+site_url = "http://127.0.0.1:3000"
+additional_redirect_urls = ["http://localhost:3000", "http://127.0.0.1:3000"]
+jwt_expiry = 3600
+enable_refresh_token_rotation = true
+refresh_token_reuse_interval = 10
+enable_signup = true
+enable_anonymous_sign_ins = false
+enable_manual_linking = false
+minimum_password_length = 8
+
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = false
+secure_password_change = false
+max_frequency = "1s"
+
+[auth.sms]
+enable_signup = false
+
+[edge_runtime]
+enabled = true
+policy = "per_worker"
+inspector_port = 56383
+
+[analytics]
+enabled = false
+
+# WhatsApp (OpenWA) — Edge Functions
+# O webhook é chamado pelo OpenWA, sem JWT: a função valida o segredo do webhook (Vault) no header.
+[functions.openwa-webhook]
+verify_jwt = false
+
+# Portal (JWT do usuário) e cron (Bearer service_role): a própria função confere quem chamou.
+[functions.openwa-send]
+verify_jwt = true
+
+[functions.openwa-groups]
+verify_jwt = true

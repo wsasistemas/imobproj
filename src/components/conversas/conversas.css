@@ -1,0 +1,90 @@
+/* =====================================================================================================
+ * Conversas WhatsApp (/projetos/[id]/conversas) — variáveis do módulo (PRD, PARTE B: "Tela de conversas
+ * igual ao portal de atendimento": fundo #EFEAE2, balões brancos, enviados #E2F7D5) com equivalentes
+ * escuros. Use pelas classes utilitárias: bg-(--cv-fundo), bg-(--cv-balao), bg-(--cv-enviado)...
+ * ===================================================================================================== */
+.cv-raiz {
+  --cv-fundo: #efeae2;
+  --cv-padrao: rgb(17 27 33 / 0.035);
+  --cv-balao: #ffffff;
+  --cv-balao-texto: #111b21;
+  --cv-enviado: #e2f7d5;
+  --cv-enviado-texto: #111b21;
+  --cv-meta: #667781;
+  --cv-citacao: rgb(11 20 26 / 0.05);
+  --cv-citacao-borda: #06cf9c;
+  --cv-sistema: #fff5c4;
+  --cv-sistema-texto: #54656f;
+  --cv-dia: #ffffff;
+  --cv-mencao: #fff3cd;
+  --cv-sombra: 0 1px 0.5px rgb(11 20 26 / 0.13);
+  --cv-lido: #53bdeb;
+}
+
+.dark .cv-raiz {
+  --cv-fundo: #0b141a;
+  --cv-padrao: rgb(255 255 255 / 0.025);
+  --cv-balao: #202c33;
+  --cv-balao-texto: #e9edef;
+  --cv-enviado: #005c4b;
+  --cv-enviado-texto: #e9edef;
+  --cv-meta: #8696a0;
+  --cv-citacao: rgb(0 0 0 / 0.22);
+  --cv-citacao-borda: #06cf9c;
+  --cv-sistema: #182229;
+  --cv-sistema-texto: #8696a0;
+  --cv-dia: #182229;
+  --cv-mencao: #3a3417;
+  --cv-sombra: 0 1px 0.5px rgb(0 0 0 / 0.3);
+  --cv-lido: #53bdeb;
+}
+
+/* Fundo da área de mensagens: cor sólida + trama discreta (sem imagem externa). */
+.cv-mensagens {
+  background-color: var(--cv-fundo);
+  background-image: radial-gradient(var(--cv-padrao) 1px, transparent 1px);
+  background-size: 18px 18px;
+}
+
+/* Rabicho do balão (primeiro de uma sequência do mesmo autor) */
+.cv-balao {
+  position: relative;
+  box-shadow: var(--cv-sombra);
+}
+.cv-balao[data-rabicho="in"]::before,
+.cv-balao[data-rabicho="out"]::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  width: 8px;
+  height: 13px;
+  background: inherit;
+}
+.cv-balao[data-rabicho="in"]::before {
+  left: -7px;
+  clip-path: polygon(100% 0, 0 0, 100% 100%);
+}
+.cv-balao[data-rabicho="out"]::before {
+  right: -7px;
+  clip-path: polygon(0 0, 100% 0, 0 100%);
+}
+
+/* Destaque breve ao pular para a mensagem citada */
+@keyframes cv-pulso {
+  0%,
+  100% {
+    filter: none;
+  }
+  30% {
+    filter: brightness(0.86);
+  }
+}
+.cv-pulso {
+  animation: cv-pulso 1.2s ease-in-out 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .cv-pulso {
+    animation: none;
+    outline: 2px solid var(--cv-citacao-borda);
+  }
+}
