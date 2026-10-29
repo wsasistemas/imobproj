@@ -2,7 +2,6 @@
 
 import { z } from "zod";
 import { primeiroErro } from "@/components/cadastros/util";
-import { ACOES } from "@/config/menu";
 import { falha, mensagemErroBanco, sucesso, type ResultadoAcao } from "@/lib/acoes";
 import { minhasPermissoes } from "@/lib/perfil-acesso";
 import { createClient } from "@/lib/supabase/server";
@@ -18,8 +17,12 @@ const esquemaSalvar = z.object({
     .array(
       z.object({
         menu: z.string().min(1).max(60),
-        ...Object.fromEntries(ACOES.map((a) => [a, z.boolean()])),
-      }) as z.ZodType<{ menu: string } & Record<(typeof ACOES)[number], boolean>>,
+        ver: z.boolean(),
+        criar: z.boolean(),
+        editar: z.boolean(),
+        excluir: z.boolean(),
+        aprovar: z.boolean(),
+      }),
     )
     .min(1, "Nenhuma permissão mudou."),
 });
