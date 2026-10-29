@@ -530,3 +530,107 @@ on conflict do nothing;
 -- Conversas que já existiam entram na fila do setor do número delas.
 update imobproj.wa_groups g set setor_id = imobproj.fn_setor_do_numero(g.session_id)
  where g.setor_id is null and g.session_id is not null;
+
+-- -----------------------------------------------------------------------------
+-- Fase 4: Monitor de atendimento (dados fictícios)
+-- -----------------------------------------------------------------------------
+-- Terceiro número, do setor Implantação, com duas conversas de clientes.
+insert into imobproj.wa_sessions (id, project_id, numero, openwa_url, api_key_secret_id, status, last_heartbeat) values
+  ('30000000-0000-0000-0000-000000000003', 'c0000000-0000-0000-0000-000000000014', '5519935003002',
+   'http://localhost:8002', null, 'conectado', now())
+on conflict (id) do nothing;
+
+insert into imobproj.setor_numeros (session_id, setor_id) values
+  ('30000000-0000-0000-0000-000000000003', 'b3000000-0000-0000-0000-000000000002')
+on conflict (session_id) do nothing;
+
+insert into imobproj.wa_groups (id, project_id, session_id, equipe, nome, wa_group_id, ativo, auto_evidencia, auto_os) values
+  ('20000000-0000-0000-0000-000000000005', 'c0000000-0000-0000-0000-000000000014', '30000000-0000-0000-0000-000000000003',
+   'Implantação', 'Beta Logística · Implantação', '120363000000000005@g.us', true, false, false),
+  ('20000000-0000-0000-0000-000000000006', 'c0000000-0000-0000-0000-000000000014', '30000000-0000-0000-0000-000000000003',
+   'Implantação', 'Épsilon · Treinamento', '120363000000000006@g.us', true, false, false)
+on conflict (id) do nothing;
+
+-- Fernanda (gerente) também atende o Suporte técnico.
+insert into imobproj.team_members (team_id, user_id) values
+  ('b2000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000003')
+on conflict do nothing;
+
+-- Histórico: atendimentos encerrados neste mês e no mês passado (indicadores e comparação).
+-- Colunas: grupo, setor, cliente, telefone, atendente, dias atrás, minutos de espera, minutos de atendimento,
+-- transferências, devolvido à fila, reaberto em 24 h, fora do horário, prévia.
+-- Dias < 31: este mês (no mínimo o dia 1 às 8h). Dias >= 31: mês passado, no mesmo trecho do mês.
+insert into imobproj.atendimentos (setor_id, group_id, project_id, cliente_nome, cliente_telefone, atendente_id, status,
+                                   entrou_fila_em, assumido_em, encerrado_em, transferencias, devolvido_fila,
+                                   reaberto_em_24h, fora_horario, ultima_previa)
+select v.setor, v.grupo, 'c0000000-0000-0000-0000-000000000014', v.cliente, v.fone, v.atendente, 'encerrado',
+       base.ini, base.ini + make_interval(mins => v.espera),
+       base.ini + make_interval(mins => v.espera + v.dur),
+       v.transf, v.devolvido, v.reaberto, v.fora, v.previa
+  from (values
+    ('20000000-0000-0000-0000-000000000004'::uuid, 'b3000000-0000-0000-0000-000000000001'::uuid, 'Paulo Mendes',    '5511900000004', 'a0000000-0000-0000-0000-000000000005'::uuid, 1,  2, 14, 0, false, false, false, 'Relatório de SLA não abre'),
+    ('20000000-0000-0000-0000-000000000003'::uuid, 'b3000000-0000-0000-0000-000000000001'::uuid, 'Carlos Souza',    '5519997013388', 'a0000000-0000-0000-0000-000000000005'::uuid, 2,  1, 9,  0, false, false, false, 'Senha do painel expirou'),
+    ('20000000-0000-0000-0000-000000000001'::uuid, 'b3000000-0000-0000-0000-000000000001'::uuid, 'Ricardo Almeida', '5511900000002', 'a0000000-0000-0000-0000-000000000003'::uuid, 3,  4, 22, 1, false, false, false, 'Dúvida sobre o cronograma'),
+    ('20000000-0000-0000-0000-000000000002'::uuid, 'b3000000-0000-0000-0000-000000000001'::uuid, 'Paulo Mendes',    '5511900000004', 'a0000000-0000-0000-0000-000000000005'::uuid, 4,  1, 11, 0, false, true,  false, 'Erro ao anexar arquivo'),
+    ('20000000-0000-0000-0000-000000000004'::uuid, 'b3000000-0000-0000-0000-000000000001'::uuid, 'Paulo Mendes',    '5511900000004', 'a0000000-0000-0000-0000-000000000003'::uuid, 5,  3, 17, 0, false, false, true,  'Mensagem enviada às 21h'),
+    ('20000000-0000-0000-0000-000000000005'::uuid, 'b3000000-0000-0000-0000-000000000002'::uuid, 'Lúcia Ferraz',    '5511987440192', 'a0000000-0000-0000-0000-000000000003'::uuid, 6,  2, 31, 0, false, false, false, 'Agenda da visita técnica'),
+    ('20000000-0000-0000-0000-000000000006'::uuid, 'b3000000-0000-0000-0000-000000000002'::uuid, 'Sandra Melo',     '5521996542201', 'a0000000-0000-0000-0000-000000000001'::uuid, 8,  6, 26, 0, true,  false, false, 'Material do treinamento'),
+    ('20000000-0000-0000-0000-000000000003'::uuid, 'b3000000-0000-0000-0000-000000000001'::uuid, 'Carlos Souza',    '5519997013388', 'a0000000-0000-0000-0000-000000000005'::uuid, 9,  1, 8,  0, false, false, false, 'Impressora fiscal offline'),
+    ('20000000-0000-0000-0000-000000000005'::uuid, 'b3000000-0000-0000-0000-000000000002'::uuid, 'Lúcia Ferraz',    '5511987440192', 'a0000000-0000-0000-0000-000000000001'::uuid, 11, 3, 19, 0, false, false, false, 'Acesso de novos usuários'),
+    ('20000000-0000-0000-0000-000000000001'::uuid, 'b3000000-0000-0000-0000-000000000001'::uuid, 'Ricardo Almeida', '5511900000002', 'a0000000-0000-0000-0000-000000000005'::uuid, 13, 2, 12, 0, false, false, false, 'Status da OS 233'),
+    ('20000000-0000-0000-0000-000000000004'::uuid, 'b3000000-0000-0000-0000-000000000001'::uuid, 'Paulo Mendes',    '5511900000004', 'a0000000-0000-0000-0000-000000000005'::uuid, 15, 5, 15, 0, false, false, true,  'Pedido no sábado'),
+    ('20000000-0000-0000-0000-000000000006'::uuid, 'b3000000-0000-0000-0000-000000000002'::uuid, 'Sandra Melo',     '5521996542201', 'a0000000-0000-0000-0000-000000000003'::uuid, 18, 2, 24, 2, false, false, false, 'Contrato de suporte'),
+    ('20000000-0000-0000-0000-000000000004'::uuid, 'b3000000-0000-0000-0000-000000000001'::uuid, 'Paulo Mendes',    '5511900000004', 'a0000000-0000-0000-0000-000000000005'::uuid, 31, 6, 20, 1, false, false, false, 'Painel lento'),
+    ('20000000-0000-0000-0000-000000000003'::uuid, 'b3000000-0000-0000-0000-000000000001'::uuid, 'Carlos Souza',    '5519997013388', 'a0000000-0000-0000-0000-000000000005'::uuid, 33, 4, 18, 0, true,  false, true,  'Boleto não chegou'),
+    ('20000000-0000-0000-0000-000000000005'::uuid, 'b3000000-0000-0000-0000-000000000002'::uuid, 'Lúcia Ferraz',    '5511987440192', 'a0000000-0000-0000-0000-000000000003'::uuid, 36, 3, 28, 0, false, false, false, 'Kick-off da implantação'),
+    ('20000000-0000-0000-0000-000000000001'::uuid, 'b3000000-0000-0000-0000-000000000001'::uuid, 'Ricardo Almeida', '5511900000002', 'a0000000-0000-0000-0000-000000000005'::uuid, 40, 2, 10, 0, false, false, false, 'Reunião de status'),
+    ('20000000-0000-0000-0000-000000000006'::uuid, 'b3000000-0000-0000-0000-000000000002'::uuid, 'Sandra Melo',     '5521996542201', 'a0000000-0000-0000-0000-000000000001'::uuid, 44, 8, 33, 1, false, true,  false, 'Treinamento remarcado')
+  ) as v(grupo, setor, cliente, fone, atendente, dias, espera, dur, transf, devolvido, reaberto, fora, previa)
+  cross join lateral (
+    select case when v.dias >= 31
+             then (date_trunc('month', now() at time zone 'America/Sao_Paulo') - interval '1 month'
+                   + make_interval(days => least(v.dias - 31, 20)) + interval '10 hours') at time zone 'America/Sao_Paulo'
+             else greatest(
+                    (date_trunc('month', now() at time zone 'America/Sao_Paulo') + interval '8 hours') at time zone 'America/Sao_Paulo',
+                    (date_trunc('day', now() at time zone 'America/Sao_Paulo') - make_interval(days => v.dias) + interval '10 hours') at time zone 'America/Sao_Paulo')
+           end as ini
+  ) as base
+ where not exists (select 1 from imobproj.atendimentos);
+
+-- Em atendimento agora: Lucas com duas conversas (no grupo Desenvolvimento o cliente espera resposta) e
+-- Fernanda com uma do Implantação.
+insert into imobproj.atendimentos (setor_id, group_id, project_id, cliente_nome, cliente_telefone, atendente_id, status,
+                                   entrou_fila_em, assumido_em, ultima_previa, ultima_msg_cliente_em, ultima_msg_atendente_em)
+select v.setor, v.grupo, 'c0000000-0000-0000-0000-000000000014', v.cliente, v.fone, v.atendente, 'atendimento',
+       now() - make_interval(mins => v.fila), now() - make_interval(mins => v.assumiu), v.previa,
+       now() - make_interval(mins => v.cli), now() - make_interval(mins => v.atd)
+  from (values
+    ('20000000-0000-0000-0000-000000000001'::uuid, 'b3000000-0000-0000-0000-000000000001'::uuid, 'Ricardo Almeida', '5511900000002', 'a0000000-0000-0000-0000-000000000005'::uuid, 27, 25, 'Podemos antecipar a homologação?', 4, 2),
+    ('20000000-0000-0000-0000-000000000002'::uuid, 'b3000000-0000-0000-0000-000000000001'::uuid, 'Paulo Mendes',    '5511900000004', 'a0000000-0000-0000-0000-000000000005'::uuid, 13, 11, 'A tela de abertura ainda dá erro', 3, 8),
+    ('20000000-0000-0000-0000-000000000006'::uuid, 'b3000000-0000-0000-0000-000000000002'::uuid, 'Sandra Melo',     '5521996542201', 'a0000000-0000-0000-0000-000000000003'::uuid, 9,  8,  'Obrigada, vou testar agora', 6, 5)
+  ) as v(grupo, setor, cliente, fone, atendente, fila, assumiu, previa, cli, atd)
+ where not exists (select 1 from imobproj.atendimentos a where a.group_id = v.grupo and a.status <> 'encerrado');
+
+-- Na fila: mensagens novas de clientes passam por fn_atendimento_mensagem (o mesmo caminho do webhook).
+-- Ninguém tem status online ainda, então a distribuição automática não entrega nenhuma.
+insert into imobproj.wa_messages (id, group_id, wa_message_id, direction, author_phone, author_user_id, body, status, created_at) values
+  ('40000000-0000-0000-0000-000000000101', '20000000-0000-0000-0000-000000000004', 'wamid.SEED0101', 'in', '5511900000004',
+   'a0000000-0000-0000-0000-000000000004', 'O relatório de SLA da filial Campinas veio em branco', 'recebida', now() - interval '6 minutes'),
+  ('40000000-0000-0000-0000-000000000102', '20000000-0000-0000-0000-000000000003', 'wamid.SEED0102', 'in', '5519997013388',
+   null, 'Bom dia, o servidor de homologação caiu?', 'recebida', now() - interval '3 minutes'),
+  ('40000000-0000-0000-0000-000000000103', '20000000-0000-0000-0000-000000000005', 'wamid.SEED0103', 'in', '5511987440192',
+   null, 'Podemos remarcar a visita de sexta para segunda?', 'recebida', now() - interval '1 minute')
+on conflict (id) do nothing;
+
+select imobproj.fn_atendimento_mensagem(id)
+  from imobproj.wa_messages
+ where id in ('40000000-0000-0000-0000-000000000101', '40000000-0000-0000-0000-000000000102', '40000000-0000-0000-0000-000000000103')
+ order by created_at;
+
+-- Status de quem atende (depois da fila, para a distribuição não entregar no seed):
+-- Lucas online, Fernanda em pausa, Marina offline. "Online" vale por 5 min sem sinal da tela.
+insert into imobproj.atendente_status (user_id, online, pausa, atualizado_em) values
+  ('a0000000-0000-0000-0000-000000000005', true,  false, now()),
+  ('a0000000-0000-0000-0000-000000000003', true,  true,  now()),
+  ('a0000000-0000-0000-0000-000000000001', false, false, now())
+on conflict (user_id) do nothing;

@@ -58,10 +58,10 @@ Pendências da Fase 2 que dependem do Wagner:
 
 ## Fase 4 — Monitor de atendimento
 
-- [ ] Tabelas `imobproj.atendimentos` (ticket, setor, cliente, atendente, entrou na fila, assumiu, encerrou) e `imobproj.atendente_status` (online, pausa).
-- [ ] View/RPC de indicadores por período: atendidas, resolvidas no 1º atendimento, não resolvidas, fora do horário, tempo médio de espera, tempo médio de atendimento, com a variação em relação ao período anterior.
-- [ ] Tela **Monitor de atendimento** em tempo real (Realtime): indicadores, atendentes por setor, aguardando (Atender) e em atendimento (Visualizar, Abrir/transferir).
-- [ ] Distribuição automática respeitando o limite por atendente.
+- [x] Tabelas `imobproj.atendimentos` (ticket, setor, cliente, atendente, entrou na fila, assumiu, encerrou) e `imobproj.atendente_status` (online, pausa).
+- [x] View/RPC de indicadores por período: atendidas, resolvidas no 1º atendimento, não resolvidas, fora do horário, tempo médio de espera, tempo médio de atendimento, com a variação em relação ao período anterior.
+- [x] Tela **Monitor de atendimento** em tempo real (Realtime): indicadores, atendentes por setor, aguardando (Atender) e em atendimento (Visualizar, Abrir/transferir).
+- [x] Distribuição automática respeitando o limite por atendente.
 
 ## Fase 5 — App de OS (abertura pelo celular)
 

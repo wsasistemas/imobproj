@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Fragment, useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { toast } from "sonner";
 import { enviarMensagem, marcarComoLido, prepararAnexo } from "@/app/(app)/projetos/[id]/conversas/acoes";
+import { SeloAtendimento } from "@/components/atendimento/selo-atendimento";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { pode } from "@/lib/projeto/permissoes";
@@ -324,6 +325,7 @@ export function Chat({
             {!aoVivo && consulta.isSuccess && " · reconectando…"}
           </p>
         </div>
+        <SeloAtendimento grupoId={grupo.id} userId={userId} />
         <Button variant="ghost" size="icon" onClick={onAbrirPainel} aria-label="Dados do grupo" className="xl:hidden">
           <Info aria-hidden="true" />
         </Button>

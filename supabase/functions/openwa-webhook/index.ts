@@ -7,6 +7,7 @@
 // Responde 200 assim que valida o segredo; o processamento segue em segundo plano (EdgeRuntime.waitUntil):
 //   * qualquer evento da sessão → wa_sessions.last_heartbeat = agora; status pelos eventos session.*;
 //   * conversa sem setor → fila do setor dono do número (imobproj.fn_rotear_conversa; número sem setor: nada muda);
+//   * mensagem gravada → atendimento na fila do setor (imobproj.fn_atendimento_mensagem; Monitor de atendimento);
 //   * message.received em grupo cadastrado (wa_groups.wa_group_id) → wa_messages (direction 'in',
 //     idempotente por wa_message_id: on conflict do nothing); autor pelo telefone (wa_group_members → profiles);
 //   * mídia → bucket "whatsapp" (<project>/<group>/<AAAA-MM>/<id>.<ext>), media_path = "whatsapp/<caminho>";
@@ -161,6 +162,8 @@ async function processar(admin: Cliente, env: EnvelopeOpenwa): Promise<void> {
   const linha = (inseridas as { id: string }[] | null)?.[0];
   if (!linha) return log("openwa.webhook_duplicado", { wa_message_id: msg.waMessageId });
 
+  await registrarAtendimento(admin, linha.id);
+
   // Mídia
   let arquivo: { bytes: Uint8Array; mime: string; ext: string } | null = null;
   if (msg.midia) {
@@ -256,6 +259,13 @@ async function registrarEventoDeGrupo(admin: Cliente, env: EnvelopeOpenwa): Prom
 async function rotearConversa(admin: Cliente, grupoId: string, sessaoId: string | null): Promise<void> {
   const { error } = await admin.rpc("fn_rotear_conversa", { p_group_id: grupoId, p_session_id: sessaoId });
   if (error) log("openwa.roteamento_ignorado", { grupo: grupoId, erro: error.message });
+}
+
+// Fila do setor: mensagem do cliente sem atendimento aberto abre um (e tenta distribuir); com atendimento aberto,
+// atualiza a prévia e os horários. Banco sem a Fase 4 (função ausente): só registra no log e segue.
+async function registrarAtendimento(admin: Cliente, mensagemId: string): Promise<void> {
+  const { error } = await admin.rpc("fn_atendimento_mensagem", { p_message_id: mensagemId });
+  if (error) log("openwa.atendimento_ignorado", { mensagem: mensagemId, erro: error.message });
 }
 
 async function heartbeat(admin: Cliente, sessaoId: string, status: SessaoWa["status"] | null): Promise<void> {

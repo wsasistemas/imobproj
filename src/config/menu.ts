@@ -4,6 +4,7 @@ import {
   ClipboardCheck,
   FileText,
   FolderKanban,
+  Headset,
   House,
   LayoutDashboard,
   MessageCircle,
@@ -131,8 +132,18 @@ export const MENU: GrupoMenu[] = [
   },
   {
     id: "comunicacao",
-    label: "Comunicação",
+    label: "Atendimento",
     itens: [
+      {
+        id: "atendimento_monitor",
+        colorido: "monitor",
+        label: "Monitor de atendimento",
+        href: "/atendimento/monitor",
+        icon: Headset,
+        cor: "var(--sys-teal)",
+        descricao: "Indicadores, atendentes e conversas em tempo real. Gestores veem os setores deles; o super admin vê todos.",
+        acoes: ["ver", "editar"],
+      },
       {
         id: "conversas",
         colorido: "conversas",
