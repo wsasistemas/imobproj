@@ -68,14 +68,15 @@ Pendências da Fase 2 que dependem do Wagner:
 - [x] Aba "+ Nova" no app de campo: cliente e projeto, tipo, título, data e horário, responsável. Funciona offline (fila local).
 - [x] Campo "Materiais usados" nas evidências.
 - [x] Server: a OS aberta pelo app recebe número, histórico e origem "app" (`fn_app_abrir_os`).
-- [ ] Aviso no WhatsApp do cliente ao abrir a OS: a flag `aviso_cliente_pendente` já é gravada (lida de `configuracoes` quando existir); o envio fica para a Fase 6.
+- [x] Aviso no WhatsApp do cliente ao abrir a OS: feito na Fase 6 (trigger põe a mensagem na fila `wa_messages` do grupo do cliente; o cron `imobproj-openwa-reenvio` entrega).
 - [x] Tela **App de OS** no portal: indicadores, aparelhos conectados (versão, último acesso, push, pendências), convidar por WhatsApp.
 
 ## Fase 6 — Configurações gerais
 
-- [ ] Tabela `imobproj.configuracoes` (uma linha).
-- [ ] Abas Empresa (nome, CNPJ, logo, fuso, valor da hora técnica), Ordens de Serviço (numeração, prazo de aceite automático, foto e assinatura obrigatórias, aviso ao cliente, resumo semanal), Notificações, Integrações.
-- [ ] As regras de OS passam a ser lidas por portal, app e Edge Functions.
+- [x] Tabela `imobproj.configuracoes` (uma linha). Migration `20261031000600_configuracoes.sql`; logo no bucket público `imobproj-marca`.
+- [x] Abas Empresa (nome, CNPJ, logo, fuso, valor da hora técnica), Ordens de Serviço (numeração, prazo de aceite automático, foto e assinatura obrigatórias, aviso ao cliente, resumo semanal), Notificações, Integrações. Tela `/configuracoes/gerais` (`/admin/configuracoes` redireciona).
+- [x] As regras de OS passam a ser lidas por portal, app e banco: foto/assinatura obrigatórias (trigger em `service_orders` + aviso no app antes do check-out), aceite automático (`fn_aceite_automatico` no pg_cron de hora em hora), aviso ao cliente, número inicial da OS em projetos novos, valor da hora na medição e link do app no convite.
+- [ ] Resumo semanal de horas ao usuário-chave e as chaves de Notificações: ficam gravados; o envio (rotina semanal e push condicionado às chaves) não foi implementado nesta fase.
 
 ## Fase 7 — Versão demo com dados fictícios
 

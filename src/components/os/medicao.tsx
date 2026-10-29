@@ -125,7 +125,7 @@ function mesValido(v: string | null) {
   return !!v && /^\d{4}-\d{2}$/.test(v) && isValid(parse(`${v}-01`, "yyyy-MM-dd", new Date()));
 }
 
-export function Medicao({ projetoId, codigo }: { projetoId: string; codigo: string }) {
+export function Medicao({ projetoId, codigo, valorHora }: { projetoId: string; codigo: string; valorHora?: number | null }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -227,7 +227,13 @@ export function Medicao({ projetoId, codigo }: { projetoId: string; codigo: stri
 
       {/* KPIs */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Kpi rotulo="Horas aprovadas" valor={formatarHoras(agregado.total)} carregando={consulta.isPending} destaque />
+        <Kpi
+          rotulo="Horas aprovadas"
+          valor={formatarHoras(agregado.total)}
+          detalhe={valorHora ? `≈ ${formatarMoeda(agregado.total * valorHora)} · ${formatarMoeda(valorHora)}/h` : undefined}
+          carregando={consulta.isPending}
+          destaque
+        />
         <Kpi rotulo="OS consideradas" valor={String(consideradas.length)} carregando={consulta.isPending} />
         <Kpi rotulo="Pessoas" valor={String(agregado.porPessoa.length)} carregando={consulta.isPending} />
         <Kpi
@@ -392,7 +398,10 @@ function TabelaOs({ projetoId, lista }: { projetoId: string; lista: OsMedicao[] 
   );
 }
 
-function Kpi({ rotulo, valor, carregando, destaque }: { rotulo: string; valor: string; carregando: boolean; destaque?: boolean }) {
+const MOEDA = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
+const formatarMoeda = (v: number) => MOEDA.format(v);
+
+function Kpi({ rotulo, valor, detalhe, carregando, destaque }: { rotulo: string; valor: string; detalhe?: string; carregando: boolean; destaque?: boolean }) {
   return (
     <Card size="sm" className="gap-1 px-4">
       <p className="text-[12.5px] text-muted-foreground">{rotulo}</p>
@@ -403,6 +412,7 @@ function Kpi({ rotulo, valor, carregando, destaque }: { rotulo: string; valor: s
           {valor}
         </p>
       )}
+      {detalhe && !carregando && <p className="text-[12px] text-muted-foreground tabular-nums">{detalhe}</p>}
     </Card>
   );
 }

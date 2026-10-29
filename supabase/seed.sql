@@ -656,3 +656,19 @@ select v.id, 'c0000000-0000-0000-0000-000000000014', v.executor, v.titulo, v.des
      null, interval '-2 days 9 hours', interval '-2 days 10 hours', 'agendada', 'preventiva')
   ) as v(id, executor, titulo, descricao, inicio, fim, status, tipo)
  where not exists (select 1 from imobproj.service_orders so where so.id = v.id);
+
+-- -----------------------------------------------------------------------------
+-- Fase 6 · Configurações gerais (dados fictícios). O aviso ao cliente fica desligado no seed para não
+-- encher a fila do WhatsApp com as OS de exemplo.
+-- -----------------------------------------------------------------------------
+update imobproj.configuracoes
+   set empresa_nome                 = 'WSA Sistemas',
+       empresa_cnpj                 = '98.765.432/0001-10',
+       valor_hora_tecnica           = 145.00,
+       aceite_automatico_horas      = 72,
+       exigir_foto_checkout         = true,
+       exigir_assinatura_checkout   = false,
+       avisar_cliente_abertura_os   = false,
+       resumo_semanal_usuario_chave = true,
+       portal_url                   = 'http://localhost:3000'
+ where id;

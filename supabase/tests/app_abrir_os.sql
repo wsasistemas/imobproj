@@ -30,6 +30,10 @@ declare
   v_ok boolean;
   v_n int;
 begin
+  -- As regras de check-out da Fase 6 (foto/assinatura obrigatórias) têm teste próprio (configuracoes_regras.sql).
+  if to_regclass('imobproj.configuracoes') is not null then
+    execute 'update imobproj.configuracoes set exigir_foto_checkout = false, exigir_assinatura_checkout = false';
+  end if;
   select coalesce(max(numero), 0) into v_ultimo from imobproj.service_orders where project_id = v_proj;
 
   -- 1) analista abre para si: número sequencial, origem app, agendada, histórico "OS criada"

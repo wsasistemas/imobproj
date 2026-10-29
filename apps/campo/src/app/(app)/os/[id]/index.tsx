@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Banner, Botao, CaixaMarcacao, Campo, Cartao, Linha, RotuloSecao, Selo } from "../../../../components/ui";
 import { useApontamento } from "../../../../lib/apontamento";
+import { useRegrasCheckout } from "../../../../lib/configuracoes";
 import { useEvidencias } from "../../../../lib/evidencias";
 import { useFila } from "../../../../lib/fila";
 import { coordenadas, dataHora, formatarHoras, horario, horasEntre } from "../../../../lib/formato";
@@ -25,6 +26,7 @@ export default function DetalheOs() {
   const os = lista?.[0] ?? aplicarPendencias(osLocais(itens), itens).find((o) => o.id === id) ?? null;
 
   const { checkin, checkout, ocupado } = useApontamento();
+  const regras = useRegrasCheckout();
   const { escolherArquivo, escolherPrint } = useEvidencias(os);
   const [enviadas, setEnviadas] = useState<EvidenciaComUrl[]>([]);
   const [relato, setRelato] = useState("");
@@ -91,6 +93,15 @@ export default function DetalheOs() {
       return;
     }
     setErroRelato(null);
+    // Regras de Configurações gerais (o servidor confere de novo e recusa o check-out sem elas).
+    const faltando = [
+      regras.exigirFoto && !miniaturas.some((m) => m.tipo === "foto") ? "ao menos uma foto" : null,
+      regras.exigirAssinatura && !miniaturas.some((m) => m.tipo === "assinatura") ? "a assinatura do cliente" : null,
+    ].filter(Boolean);
+    if (faltando.length > 0) {
+      Alert.alert("Falta evidência", `Para enviar esta OS para aceite, registre ${faltando.join(" e ")}.`);
+      return;
+    }
     const continuar = await new Promise<boolean>((resolver) =>
       Alert.alert(
         "Check-out e enviar para aceite?",

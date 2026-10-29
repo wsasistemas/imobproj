@@ -30,7 +30,6 @@ type Aparelho = {
 export const CHAVE_APP_CAMPO = ["configuracoes", "app-campo"];
 
 /** Endereço de instalação do app (build EAS). Sem a variável, o convite usa o portal. */
-const LINK_INSTALACAO = process.env.NEXT_PUBLIC_APP_CAMPO_URL ?? "";
 
 function quando(iso: string) {
   const d = new Date(iso);
@@ -43,7 +42,7 @@ function quando(iso: string) {
   return `${d.toLocaleDateString("pt-BR")}, ${hora}`;
 }
 
-export function AppCampo() {
+export function AppCampo({ linkInstalacao = "" }: { linkInstalacao?: string }) {
   const [convite, setConvite] = useState(false);
 
   const painel = useQuery({
@@ -154,13 +153,13 @@ export function AppCampo() {
         )}
       </Card>
 
-      <DialogoConvite aberto={convite} aoFechar={() => setConvite(false)} />
+      <DialogoConvite aberto={convite} aoFechar={() => setConvite(false)} link={linkInstalacao} />
     </div>
   );
 }
 
-function DialogoConvite({ aberto, aoFechar }: { aberto: boolean; aoFechar: () => void }) {
-  const link = LINK_INSTALACAO || (typeof window !== "undefined" ? `${window.location.origin}/login` : "");
+function DialogoConvite({ aberto, aoFechar, link: linkInstalacao }: { aberto: boolean; aoFechar: () => void; link: string }) {
+  const link = linkInstalacao || (typeof window !== "undefined" ? `${window.location.origin}/login` : "");
   const mensagem =
     `Olá! Para registrar e executar as Ordens de Serviço pelo celular, instale o app IMOBPROJ Campo:\n${link}\n\n` +
     `Entre com o mesmo e-mail e senha do portal. Sem internet, o app guarda tudo e envia quando a rede voltar.`;
@@ -183,9 +182,9 @@ function DialogoConvite({ aberto, aoFechar }: { aberto: boolean; aoFechar: () =>
         </DialogHeader>
         <RotuloSecao>Mensagem</RotuloSecao>
         <Textarea id="convite-app" readOnly rows={7} value={mensagem} onFocus={(e) => e.currentTarget.select()} />
-        {!LINK_INSTALACAO && (
+        {!linkInstalacao && (
           <p className="text-[12px] text-muted-foreground">
-            O link de instalação do build EAS ainda não foi configurado (NEXT_PUBLIC_APP_CAMPO_URL); por enquanto o convite leva ao portal.
+            O link de instalação do app ainda não foi informado em Configurações gerais › Integrações; por enquanto o convite leva ao portal.
           </p>
         )}
         <div className="flex justify-end">
