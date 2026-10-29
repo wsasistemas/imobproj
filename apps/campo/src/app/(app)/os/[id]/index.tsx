@@ -7,9 +7,9 @@ import { useApontamento } from "../../../../lib/apontamento";
 import { useEvidencias } from "../../../../lib/evidencias";
 import { useFila } from "../../../../lib/fila";
 import { coordenadas, dataHora, formatarHoras, horario, horasEntre } from "../../../../lib/formato";
-import { buscarEvidencias, buscarOs, useOsCarregadas, type EvidenciaComUrl } from "../../../../lib/os";
+import { aplicarPendencias, buscarEvidencias, buscarOs, osLocais, useOsCarregadas, type EvidenciaComUrl } from "../../../../lib/os";
 import { cor, espaco, raio } from "../../../../lib/tema";
-import { ROTULO_EVIDENCIA, type EvidenceTipo } from "../../../../lib/tipos";
+import { ROTULO_EVIDENCIA, ROTULO_TIPO_OS, rotuloOs, type EvidenceTipo } from "../../../../lib/tipos";
 
 type Miniatura = { chave: string; tipo: EvidenceTipo; uri: string | null; quando: string; lat: number | null; lng: number | null; pendente: boolean; erro?: string | null; nome?: string };
 
@@ -20,14 +20,16 @@ export default function DetalheOs() {
     return os ? [os] : [];
   }, [id]);
   const { lista, cacheDe, erro, carregando } = useOsCarregadas(`os:${id}`, buscar);
-  const os = lista?.[0] ?? null;
-
   const { itens, online, versao } = useFila();
+  // OS aberta neste aparelho que ainda não subiu: mostra a versão local (com check-in pendente, se houver).
+  const os = lista?.[0] ?? aplicarPendencias(osLocais(itens), itens).find((o) => o.id === id) ?? null;
+
   const { checkin, checkout, ocupado } = useApontamento();
   const { escolherArquivo, escolherPrint } = useEvidencias(os);
   const [enviadas, setEnviadas] = useState<EvidenciaComUrl[]>([]);
   const [relato, setRelato] = useState("");
   const [foraEscopo, setForaEscopo] = useState(false);
+  const [materiais, setMateriais] = useState("");
   const [erroRelato, setErroRelato] = useState<string | null>(null);
 
   useEffect(() => {
@@ -101,7 +103,7 @@ export default function DetalheOs() {
       ),
     );
     if (!continuar) return;
-    if (await checkout(os, relato, foraEscopo)) {
+    if (await checkout(os, relato, foraEscopo, materiais)) {
       Alert.alert("Enviada para aceite", online ? "O usuário-chave foi avisado." : "Sem rede agora: o envio acontece assim que a conexão voltar.");
       router.back();
     }
@@ -109,14 +111,15 @@ export default function DetalheOs() {
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined} keyboardVerticalOffset={90}>
-      <Stack.Screen options={{ title: `OS ${os.numero}` }} />
+      <Stack.Screen options={{ title: rotuloOs(os) }} />
       <ScrollView contentContainerStyle={{ padding: espaco.lg, gap: espaco.lg }} keyboardShouldPersistTaps="handled">
         {cacheDe ? <Banner tom="alerta">Sem conexão: dados de {dataHora(new Date(cacheDe))}.</Banner> : null}
 
         <Cartao style={{ gap: 6 }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
             <Text style={{ color: cor.suave, fontWeight: "600" }}>
-              OS {os.numero} · {os.projeto?.codigo}
+              {rotuloOs(os)} · {os.projeto?.codigo}
+              {os.tipo ? ` · ${ROTULO_TIPO_OS[os.tipo] ?? os.tipo}` : ""}
             </Text>
             <Selo status={os.status} />
           </View>
@@ -128,6 +131,8 @@ export default function DetalheOs() {
           {os.checkout_at ? <Linha rotulo="Check-out" valor={dataHora(new Date(os.checkout_at))} /> : null}
           {os.checkout_at || emExecucao ? <Linha rotulo={emExecucao ? "Horas até agora" : "Horas"} valor={formatarHoras(emExecucao ? horasAteAgora : os.horas)} /> : null}
         </Cartao>
+
+        {os.numero === 0 ? <Banner tom="info">OS aberta neste aparelho. Ela recebe o número assim que for enviada.</Banner> : null}
 
         {os.status === "agendada" ? (
           <Botao titulo="Fazer check-in" carregando={ocupado === os.id} onPress={() => void checkin(os)} />
@@ -185,6 +190,13 @@ export default function DetalheOs() {
               erro={erroRelato}
               placeholder="Ex.: configurado o backup diário e testada a restauração."
             />
+            <Campo
+              rotulo="Materiais usados"
+              value={materiais}
+              onChangeText={setMateriais}
+              multiline
+              placeholder="Ex.: 1 cabo USB, 1 bobina térmica."
+            />
             <CaixaMarcacao marcado={foraEscopo} aoMudar={setForaEscopo} rotulo="Fora do escopo" />
             {foraEscopo ? <Banner tom="alerta">O gerente vai avaliar e abrir a proposta de escopo.</Banner> : null}
             <Botao titulo="Check-out e enviar para aceite" carregando={ocupado === os.id} onPress={() => void aoFazerCheckout()} />
@@ -193,6 +205,7 @@ export default function DetalheOs() {
           <Cartao>
             <RotuloSecao>Descrição</RotuloSecao>
             <Text style={{ color: cor.texto }}>{os.relato}</Text>
+            {os.materiais ? <Text style={{ color: cor.suave, marginTop: 6 }}>Materiais: {os.materiais}</Text> : null}
             {os.fora_escopo ? <Text style={{ color: cor.alerta, marginTop: 6, fontWeight: "600" }}>Marcada como fora do escopo</Text> : null}
           </Cartao>
         ) : null}

@@ -10,7 +10,7 @@ const icone = (simbolo: string) =>
   };
 
 export default function LayoutAbas() {
-  const { aprovador } = useSessao();
+  const { aprovador, abreOs } = useSessao();
   return (
     <Tabs
       screenOptions={{
@@ -26,6 +26,8 @@ export default function LayoutAbas() {
       }}
     >
       <Tabs.Screen name="index" options={{ title: "Hoje", tabBarIcon: icone("☀︎") }} />
+      {/* Abrir OS direto pelo celular (D2): gerente, diretor, analista, prestador ou super admin. */}
+      <Tabs.Screen name="nova" options={{ title: "+ Nova", headerTitle: "Nova OS", tabBarIcon: icone("＋"), href: abreOs ? undefined : null }} />
       <Tabs.Screen name="agenda" options={{ title: "Agenda", tabBarIcon: icone("▦") }} />
       {/* Só diretor/usuário-chave (ou super admin) aprova OS. */}
       <Tabs.Screen name="aceites" options={{ title: "Aceites", tabBarIcon: icone("✓"), href: aprovador ? undefined : null }} />

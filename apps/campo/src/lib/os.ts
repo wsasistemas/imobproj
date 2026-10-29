@@ -4,15 +4,58 @@ import { horasEntre } from "./formato";
 import { BUCKET_EVIDENCIAS, supabase } from "./supabase";
 import type { Evidencia, Os } from "./tipos";
 
-const COLUNAS_OS = `id, project_id, numero, titulo, descricao, status, agendada_inicio, agendada_fim, checkin_at, checkout_at,
+const COLUNAS_BASE = `id, project_id, numero, titulo, descricao, status, agendada_inicio, agendada_fim, checkin_at, checkout_at,
   horas, fora_escopo, relato, aceite_comentario, executor_id,
   projeto:projects(codigo, nome), executor:profiles!executor_id(nome), eventos:calendar_events(local)`;
+const COLUNAS_OS = `${COLUNAS_BASE}, materiais, tipo`;
+
+type Resposta = { data: unknown; error: { code?: string } | null };
+
+/** Consulta com as colunas da Fase 5; se o servidor ainda não as tem (42703), repete sem elas. */
+async function comColunas(consulta: (colunas: string) => PromiseLike<Resposta>): Promise<unknown> {
+  let r = await consulta(COLUNAS_OS);
+  if (r.error?.code === "42703" || r.error?.code === "PGRST204") r = await consulta(COLUNAS_BASE);
+  if (r.error) throw r.error;
+  return r.data;
+}
 
 type LinhaOs = Omit<Os, "local"> & { eventos: { local: string | null }[] | null };
 
 function normalizar(l: LinhaOs): Os {
   const { eventos, ...resto } = l;
   return { ...resto, horas: Number(resto.horas ?? 0), local: eventos?.find((e) => e.local)?.local ?? null };
+}
+
+/** OS abertas neste aparelho que ainda não subiram (aparecem com "OS nova" e "Aguardando envio"). */
+export function osLocais(itens: ItemFila[]): Os[] {
+  return itens.flatMap((item) =>
+    item.tipo !== "abrir_os"
+      ? []
+      : [
+          {
+            id: item.os_id,
+            project_id: item.project_id,
+            numero: 0,
+            titulo: item.payload.titulo,
+            descricao: item.payload.descricao,
+            status: item.payload.inicio ? "agendada" : "rascunho",
+            agendada_inicio: item.payload.inicio,
+            agendada_fim: item.payload.fim,
+            checkin_at: null,
+            checkout_at: null,
+            horas: 0,
+            fora_escopo: false,
+            relato: null,
+            materiais: null,
+            tipo: item.payload.tipo,
+            aceite_comentario: null,
+            executor_id: item.payload.executor_id,
+            projeto: item.payload.projeto,
+            executor: { nome: item.payload.executor_nome },
+            local: null,
+          } satisfies Os,
+        ],
+  );
 }
 
 /** Situação local da OS enquanto o check-in/check-out ainda está na fila. */
@@ -29,6 +72,7 @@ export function aplicarPendencias(lista: Os[], itens: ItemFila[]): Os[] {
           checkout_at: item.payload.em,
           horas: r.checkin_at ? horasEntre(r.checkin_at, new Date(item.payload.em)) : r.horas,
           relato: item.payload.relato,
+          materiais: item.payload.materiais ?? r.materiais,
           fora_escopo: r.fora_escopo || item.payload.fora_escopo,
         };
     }
@@ -38,33 +82,34 @@ export function aplicarPendencias(lista: Os[], itens: ItemFila[]): Os[] {
 
 export async function buscarMinhasOs(userId: string, de: Date, ate: Date, incluirEmExecucao: boolean): Promise<Os[]> {
   const periodo = `and(agendada_inicio.gte.${de.toISOString()},agendada_inicio.lt.${ate.toISOString()})`;
-  const { data, error } = await supabase
-    .from("service_orders")
-    .select(COLUNAS_OS)
-    .eq("executor_id", userId)
-    .neq("status", "rascunho")
-    .or(incluirEmExecucao ? `${periodo},status.eq.em_execucao` : periodo)
-    .order("agendada_inicio", { ascending: true, nullsFirst: false });
-  if (error) throw error;
-  return (data as unknown as LinhaOs[]).map(normalizar);
+  const data = await comColunas((colunas) =>
+    supabase
+      .from("service_orders")
+      .select(colunas)
+      .eq("executor_id", userId)
+      .neq("status", "rascunho")
+      .or(incluirEmExecucao ? `${periodo},status.eq.em_execucao` : periodo)
+      .order("agendada_inicio", { ascending: true, nullsFirst: false }),
+  );
+  return (data as LinhaOs[]).map(normalizar);
 }
 
 export async function buscarOs(id: string): Promise<Os | null> {
-  const { data, error } = await supabase.from("service_orders").select(COLUNAS_OS).eq("id", id).maybeSingle();
-  if (error) throw error;
-  return data ? normalizar(data as unknown as LinhaOs) : null;
+  const data = await comColunas((colunas) => supabase.from("service_orders").select(colunas).eq("id", id).maybeSingle());
+  return data ? normalizar(data as LinhaOs) : null;
 }
 
 export async function buscarAguardandoAceite(projetos: string[]): Promise<Os[]> {
   if (projetos.length === 0) return [];
-  const { data, error } = await supabase
-    .from("service_orders")
-    .select(COLUNAS_OS)
-    .eq("status", "aguardando_aceite")
-    .in("project_id", projetos)
-    .order("checkout_at", { ascending: true });
-  if (error) throw error;
-  return (data as unknown as LinhaOs[]).map(normalizar);
+  const data = await comColunas((colunas) =>
+    supabase
+      .from("service_orders")
+      .select(colunas)
+      .eq("status", "aguardando_aceite")
+      .in("project_id", projetos)
+      .order("checkout_at", { ascending: true }),
+  );
+  return (data as LinhaOs[]).map(normalizar);
 }
 
 export type EvidenciaComUrl = Evidencia & { url: string | null };

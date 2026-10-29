@@ -51,7 +51,7 @@ export function useApontamento() {
   );
 
   const checkout = useCallback(
-    async (os: Os, relato: string, foraEscopo: boolean) => {
+    async (os: Os, relato: string, foraEscopo: boolean, materiais = "") => {
       setOcupado(os.id);
       try {
         const ponto = await gpsOuConfirmacao("check-out");
@@ -66,6 +66,7 @@ export function useApontamento() {
             lng: ponto?.lng ?? null,
             relato: relato.trim(),
             fora_escopo: foraEscopo,
+            materiais: materiais.trim() || undefined,
           },
         });
         return true;

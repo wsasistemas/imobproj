@@ -1,11 +1,13 @@
-// Fila offline (expo-sqlite): check-in, check-out e evidências são gravados aqui primeiro e enviados
+// Fila offline (expo-sqlite): OS nova, check-in, check-out e evidências são gravados aqui primeiro e enviados
 // ao Supabase em ordem quando há rede. Arquivos ficam em Documentos/fila até subirem para o Storage.
 //
 // Regras:
 //  * erro de rede → para a sincronização e tenta de novo quando a rede voltar;
 //  * erro de negócio (RLS, situação da OS mudou...) → o item fica com o erro visível e os itens seguintes
 //    da MESMA OS esperam (um check-out não pode passar na frente de um check-in que falhou);
-//  * o servidor é idempotente (fn_app_checkin/checkout/registrar_evidencia), então reenviar é seguro.
+//  * o servidor é idempotente (fn_app_abrir_os/checkin/checkout/registrar_evidencia), então reenviar é seguro.
+//  * a OS aberta no aparelho já nasce com o id definitivo (UUID local), então o check-in feito offline
+//    entra na fila com o mesmo os_id e sobe logo depois da criação.
 
 import NetInfo from "@react-native-community/netinfo";
 import { randomUUID } from "expo-crypto";
@@ -13,11 +15,23 @@ import { Directory, File, Paths } from "expo-file-system";
 import * as SQLite from "expo-sqlite";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { AppState } from "react-native";
+import { registrarAparelho } from "./aparelho";
 import { BUCKET_EVIDENCIAS, supabase } from "./supabase";
 import type { EvidenceTipo } from "./tipos";
 
 export type PayloadCheckin = { em: string; lat: number | null; lng: number | null };
-export type PayloadCheckout = PayloadCheckin & { relato: string; fora_escopo: boolean };
+export type PayloadCheckout = PayloadCheckin & { relato: string; fora_escopo: boolean; materiais?: string };
+export type TipoOs = "corretiva" | "preventiva" | "implantacao" | "visita";
+export type PayloadAbrirOs = {
+  tipo: TipoOs;
+  titulo: string;
+  descricao: string | null;
+  inicio: string | null;
+  fim: string | null;
+  executor_id: string;
+  executor_nome: string;
+  projeto: { codigo: string; nome: string };
+};
 export type PayloadEvidencia = {
   tipo: EvidenceTipo;
   storage_path: string;
@@ -32,11 +46,13 @@ export type PayloadEvidencia = {
 
 type Base = { id: string; os_id: string; project_id: string; criado_em: string; tentativas: number; erro: string | null };
 export type ItemFila =
+  | (Base & { tipo: "abrir_os"; payload: PayloadAbrirOs; arquivo: null })
   | (Base & { tipo: "checkin"; payload: PayloadCheckin; arquivo: null })
   | (Base & { tipo: "checkout"; payload: PayloadCheckout; arquivo: null })
   | (Base & { tipo: "evidencia"; payload: PayloadEvidencia; arquivo: string });
 
 export type NovoItem =
+  | { tipo: "abrir_os"; os_id: string; project_id: string; payload: PayloadAbrirOs }
   | { tipo: "checkin"; os_id: string; project_id: string; payload: PayloadCheckin }
   | { tipo: "checkout"; os_id: string; project_id: string; payload: PayloadCheckout }
   | { tipo: "evidencia"; os_id: string; project_id: string; payload: Omit<PayloadEvidencia, "storage_path">; arquivo: string; extensao: string };
@@ -117,6 +133,21 @@ function mensagem(e: unknown) {
 }
 
 async function enviar(item: ItemFila) {
+  if (item.tipo === "abrir_os") {
+    const p = item.payload;
+    const { error } = await supabase.rpc("fn_app_abrir_os", {
+      p_id: item.os_id,
+      p_project_id: item.project_id,
+      p_tipo: p.tipo,
+      p_titulo: p.titulo,
+      p_descricao: p.descricao,
+      p_inicio: p.inicio,
+      p_fim: p.fim,
+      p_executor_id: p.executor_id,
+    });
+    if (error) throw error;
+    return;
+  }
   if (item.tipo === "checkin") {
     const { error } = await supabase.rpc("fn_app_checkin", {
       p_os_id: item.os_id,
@@ -128,14 +159,18 @@ async function enviar(item: ItemFila) {
     return;
   }
   if (item.tipo === "checkout") {
-    const { error } = await supabase.rpc("fn_app_checkout", {
+    const base = {
       p_os_id: item.os_id,
       p_em: item.payload.em,
       p_lat: item.payload.lat,
       p_lng: item.payload.lng,
       p_relato: item.payload.relato,
       p_fora_escopo: item.payload.fora_escopo,
-    });
+    };
+    const materiais = item.payload.materiais?.trim();
+    let { error } = await supabase.rpc("fn_app_checkout", materiais ? { ...base, p_materiais: materiais } : base);
+    // Servidor ainda sem a Fase 5 (função de 7 parâmetros): grava o check-out sem os materiais.
+    if (error && materiais && error.code === "PGRST202") ({ error } = await supabase.rpc("fn_app_checkout", base));
     if (error) throw error;
     return;
   }
@@ -216,6 +251,7 @@ export function FilaProvider({ children }: { children: ReactNode }) {
       setSincronizando(false);
       await recarregar();
       if (enviados > 0) setVersao((v) => v + 1);
+      void listar().then((restantes) => registrarAparelho(restantes.length));
     }
   }, [recarregar]);
 

@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { horario } from "../lib/formato";
 import { cor, espaco, raio } from "../lib/tema";
-import type { Os } from "../lib/tipos";
+import { rotuloOs, type Os } from "../lib/tipos";
 import { Selo } from "./ui";
 
 export function CartaoOs({ os, rodape, destino = "os" }: { os: Os; rodape?: ReactNode; destino?: "os" | "aceite" }) {
@@ -12,12 +12,13 @@ export function CartaoOs({ os, rodape, destino = "os" }: { os: Os; rodape?: Reac
       <Pressable
         onPress={() => router.push(destino === "os" ? `/os/${os.id}` : `/aceite/${os.id}`)}
         accessibilityRole="button"
-        accessibilityLabel={`OS ${os.numero}: ${os.titulo}`}
+        accessibilityLabel={`${rotuloOs(os)}: ${os.titulo}`}
         style={({ pressed }) => [estilos.corpo, pressed && { backgroundColor: cor.bordaSuave }]}
       >
         <View style={estilos.topo}>
           <Text style={estilos.numero}>
-            OS {os.numero} · {os.projeto?.codigo ?? ""}
+            {rotuloOs(os)} · {os.projeto?.codigo ?? ""}
+            {os.numero === 0 ? " · aguardando envio" : ""}
           </Text>
           <Selo status={os.status} />
         </View>

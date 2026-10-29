@@ -65,10 +65,11 @@ Pendências da Fase 2 que dependem do Wagner:
 
 ## Fase 5 — App de OS (abertura pelo celular)
 
-- [ ] Aba "+ Nova" no app de campo: cliente e projeto, tipo, título, data e horário, responsável. Funciona offline (fila local).
-- [ ] Campo "Materiais usados" nas evidências.
-- [ ] Server: a OS aberta pelo app recebe número, histórico e aviso no WhatsApp do cliente (quando ligado em Configurações).
-- [ ] Tela **App de OS** no portal: indicadores, aparelhos conectados (versão, último acesso, push, pendências), convidar por WhatsApp.
+- [x] Aba "+ Nova" no app de campo: cliente e projeto, tipo, título, data e horário, responsável. Funciona offline (fila local).
+- [x] Campo "Materiais usados" nas evidências.
+- [x] Server: a OS aberta pelo app recebe número, histórico e origem "app" (`fn_app_abrir_os`).
+- [ ] Aviso no WhatsApp do cliente ao abrir a OS: a flag `aviso_cliente_pendente` já é gravada (lida de `configuracoes` quando existir); o envio fica para a Fase 6.
+- [x] Tela **App de OS** no portal: indicadores, aparelhos conectados (versão, último acesso, push, pendências), convidar por WhatsApp.
 
 ## Fase 6 — Configurações gerais
 

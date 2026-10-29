@@ -245,11 +245,12 @@ export const MENU: GrupoMenu[] = [
       {
         id: "admin_app_campo",
         colorido: "app-campo",
-        label: "App de campo",
-        href: "/admin/app-campo",
+        label: "App de OS",
+        href: "/configuracoes/app-campo",
         icon: Smartphone,
         cor: "var(--sys-orange)",
-        descricao: "Aplicativo de campo: check-in/out, fotos, assinatura e modo offline.",
+        descricao: "Aplicativo para registrar e executar Ordens de Serviço no celular (Android e iOS).",
+        acoes: ["ver"],
       },
       {
         id: "admin_configuracoes",

@@ -70,7 +70,13 @@ export default function Perfil() {
         {itens.map((i) => (
           <View key={i.id} style={{ paddingVertical: 8, borderTopWidth: 1, borderTopColor: cor.bordaSuave, gap: 4 }}>
             <Text style={{ fontWeight: "600", color: cor.texto }}>
-              {i.tipo === "checkin" ? "Check-in" : i.tipo === "checkout" ? "Check-out" : ROTULO_EVIDENCIA[i.payload.tipo]}
+              {i.tipo === "abrir_os"
+                ? `OS nova · ${i.payload.titulo}`
+                : i.tipo === "checkin"
+                  ? "Check-in"
+                  : i.tipo === "checkout"
+                    ? "Check-out"
+                    : ROTULO_EVIDENCIA[i.payload.tipo]}
               <Text style={{ color: cor.suave, fontWeight: "400" }}> · {dataHora(new Date(i.criado_em))}</Text>
             </Text>
             {i.erro ? (

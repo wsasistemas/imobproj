@@ -17,7 +17,10 @@ const CHAVE_BIOMETRIA = "campo.biometria";
 const CHAVE_EMAIL = "campo.ultimo_email";
 
 export type Perfil = { id: string; nome: string; email: string | null; telefone_whatsapp: string | null; is_super_admin: boolean };
-export type Vinculo = { project_id: string; role: Papel; projeto: { codigo: string; nome: string } | null };
+export type Vinculo = { project_id: string; role: Papel; projeto: { codigo: string; nome: string; cliente: { nome: string } | null } | null };
+
+/** Papéis que abrem OS pelo app (decisão D2). O servidor confere de novo em fn_app_abrir_os. */
+export const PAPEIS_ABREM_OS: Papel[] = ["gerente", "diretor", "analista", "prestador"];
 
 type ContextoSessao = {
   carregando: boolean;
@@ -27,6 +30,8 @@ type ContextoSessao = {
   vinculos: Vinculo[];
   /** Diretor ou usuário-chave em algum projeto (ou super admin): vê a aba Aceites. */
   aprovador: boolean;
+  /** Pode abrir OS em ao menos um projeto: vê a aba "+ Nova". */
+  abreOs: boolean;
   biometriaAtiva: boolean;
   ultimoEmail: string;
   entrar: (email: string, senha: string, manter: boolean) => Promise<string | null>;
@@ -85,7 +90,7 @@ export function SessaoProvider({ children }: { children: ReactNode }) {
         supabase.from("profiles").select("id, nome, email, telefone_whatsapp, is_super_admin").eq("id", userId).maybeSingle(),
         supabase
           .from("project_members")
-          .select("project_id, role, projeto:projects(codigo, nome)")
+          .select("project_id, role, projeto:projects(codigo, nome, cliente:organizations!cliente_org_id(nome))")
           .eq("user_id", userId)
           .eq("ativo", true),
       ]);
@@ -135,6 +140,8 @@ export function SessaoProvider({ children }: { children: ReactNode }) {
   const aprovador =
     !!perfil?.is_super_admin || vinculos.some((v) => v.role === "usuario_chave" || v.role === "diretor");
 
+  const abreOs = !!perfil?.is_super_admin || vinculos.some((v) => PAPEIS_ABREM_OS.includes(v.role));
+
   const valor = useMemo(
     () => ({
       carregando,
@@ -143,6 +150,7 @@ export function SessaoProvider({ children }: { children: ReactNode }) {
       perfil,
       vinculos,
       aprovador,
+      abreOs,
       biometriaAtiva,
       ultimoEmail,
       entrar,
@@ -150,7 +158,7 @@ export function SessaoProvider({ children }: { children: ReactNode }) {
       sair,
       definirBiometria,
     }),
-    [carregando, sessao, bloqueado, perfil, vinculos, aprovador, biometriaAtiva, ultimoEmail, entrar, desbloquear, sair, definirBiometria],
+    [carregando, sessao, bloqueado, perfil, vinculos, aprovador, abreOs, biometriaAtiva, ultimoEmail, entrar, desbloquear, sair, definirBiometria],
   );
   return <Contexto.Provider value={valor}>{children}</Contexto.Provider>;
 }

@@ -5,6 +5,7 @@ export type Papel = "diretor" | "gerente" | "usuario_chave" | "analista" | "pres
 export type Os = {
   id: string;
   project_id: string;
+  /** 0 enquanto a OS aberta no aparelho ainda não subiu (o servidor dá o número). */
   numero: number;
   titulo: string;
   descricao: string | null;
@@ -16,6 +17,8 @@ export type Os = {
   horas: number;
   fora_escopo: boolean;
   relato: string | null;
+  materiais?: string | null;
+  tipo?: string | null;
   aceite_comentario: string | null;
   executor_id: string | null;
   projeto: { codigo: string; nome: string } | null;
@@ -48,3 +51,13 @@ export const ROTULO_EVIDENCIA: Record<EvidenceTipo, string> = {
   print: "Print",
   assinatura: "Assinatura",
 };
+
+export const ROTULO_TIPO_OS: Record<string, string> = {
+  corretiva: "Corretiva",
+  preventiva: "Preventiva",
+  implantacao: "Implantação",
+  visita: "Visita",
+};
+
+/** "OS 1046" ou "OS nova" enquanto aguarda o envio. */
+export const rotuloOs = (os: Pick<Os, "numero">) => (os.numero > 0 ? `OS ${os.numero}` : "OS nova");

@@ -634,3 +634,25 @@ insert into imobproj.atendente_status (user_id, online, pausa, atualizado_em) va
   ('a0000000-0000-0000-0000-000000000003', true,  true,  now()),
   ('a0000000-0000-0000-0000-000000000001', false, false, now())
 on conflict (user_id) do nothing;
+
+-- -----------------------------------------------------------------------------
+-- Fase 5 · App de OS: aparelhos e OS abertas pelo app (dados fictícios)
+-- -----------------------------------------------------------------------------
+insert into imobproj.app_aparelhos (id, user_id, modelo, sistema, versao_app, pendencias, ultimo_acesso) values
+  ('e5000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000005', 'Samsung Galaxy A54', 'Android 15', '1.0.3', 1, now() - interval '25 minutes'),
+  ('e5000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000006', 'iPhone 13',          'iOS 19',     '1.0.2', 1, now() - interval '1 day 2 hours'),
+  ('e5000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000004', 'Motorola Moto G84',  'Android 14', '1.0.3', 0, now() - interval '3 hours'),
+  ('e5000000-0000-0000-0000-000000000004', 'a0000000-0000-0000-0000-000000000003', 'Samsung Galaxy S24', 'Android 15', '1.0.1', 0, now() - interval '45 days')
+on conflict (id) do nothing;
+
+insert into imobproj.service_orders (id, project_id, executor_id, titulo, descricao, agendada_inicio, agendada_fim, status, origem, tipo, criado_por)
+select v.id, 'c0000000-0000-0000-0000-000000000014', v.executor, v.titulo, v.descricao,
+       date_trunc('day', now()) + v.inicio, date_trunc('day', now()) + v.fim,
+       v.status::imobproj.os_status, 'app', v.tipo, v.executor
+  from (values
+    ('e6000000-0000-0000-0000-000000000001'::uuid, 'a0000000-0000-0000-0000-000000000005'::uuid, 'Impressora fiscal sem comunicação',
+     'Aberta em campo: cliente relatou falha ao emitir cupom.', interval '14 hours', interval '15 hours 30 minutes', 'agendada', 'corretiva'),
+    ('e6000000-0000-0000-0000-000000000002'::uuid, 'a0000000-0000-0000-0000-000000000006'::uuid, 'Revisão do nobreak da sala de servidores',
+     null, interval '-2 days 9 hours', interval '-2 days 10 hours', 'agendada', 'preventiva')
+  ) as v(id, executor, titulo, descricao, inicio, fim, status, tipo)
+ where not exists (select 1 from imobproj.service_orders so where so.id = v.id);

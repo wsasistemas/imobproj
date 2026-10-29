@@ -4,8 +4,9 @@ import { FlatList, RefreshControl, Text, View } from "react-native";
 import { CartaoOs } from "../../../components/cartao-os";
 import { Banner, Botao, Vazio } from "../../../components/ui";
 import { useApontamento } from "../../../lib/apontamento";
-import { dataHora, dataPorExtenso, inicioDoDia, somarDias } from "../../../lib/formato";
-import { buscarMinhasOs, useOsCarregadas } from "../../../lib/os";
+import { dataHora, dataPorExtenso, inicioDoDia, mesmoDia, somarDias } from "../../../lib/formato";
+import { useFila } from "../../../lib/fila";
+import { aplicarPendencias, buscarMinhasOs, osLocais, useOsCarregadas } from "../../../lib/os";
 import { useSessao } from "../../../lib/sessao";
 import { cor, espaco, texto } from "../../../lib/tema";
 
@@ -16,10 +17,19 @@ export default function Hoje() {
   const buscar = useCallback(() => buscarMinhasOs(userId!, hoje, somarDias(hoje, 1), true), [userId, hoje]);
   const { lista, cacheDe, erro, carregando, recarregar } = useOsCarregadas(userId ? `hoje:${userId}:${hoje.toISOString()}` : null, buscar);
   const { checkin, ocupado } = useApontamento();
+  const { itens } = useFila();
+  // OS abertas neste aparelho para hoje, ainda na fila: aparecem já, com "aguardando envio".
+  const locais = useMemo(
+    () =>
+      aplicarPendencias(osLocais(itens), itens).filter(
+        (os) => os.executor_id === userId && os.agendada_inicio && mesmoDia(new Date(os.agendada_inicio), hoje) && !lista?.some((l) => l.id === os.id),
+      ),
+    [itens, userId, hoje, lista],
+  );
 
   return (
     <FlatList
-      data={lista ?? []}
+      data={[...locais, ...(lista ?? [])]}
       keyExtractor={(os) => os.id}
       contentContainerStyle={{ padding: espaco.lg, gap: espaco.md }}
       refreshControl={<RefreshControl refreshing={carregando && !!lista} onRefresh={() => void recarregar()} tintColor={cor.primaria} />}
