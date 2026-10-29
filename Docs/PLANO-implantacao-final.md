@@ -37,12 +37,17 @@ Checklist binário: cada item está **feito** ou **não feito**. Nada de "parcia
 
 ## Fase 2 — Perfis e permissões; Permissões por aplicativo
 
-- [ ] Tabelas `imobproj.perfis` e `imobproj.perfil_permissoes` (menu × ver/criar/editar/excluir/aprovar). Coluna `profiles.perfil_id`.
-- [ ] Perfis iniciais: Super admin (fixo), Gerente de projetos, Analista, Atendente, Prestador, Usuário-chave.
-- [ ] Função `imobproj.pode(menu, acao)` usada pelo menu e pelas Server Actions.
-- [ ] Tela **Perfis e permissões** (`/configuracoes/perfis`): lista de perfis, matriz por menu, filtro, "Liberar todos", aviso de alterações não salvas.
-- [ ] Tela **Permissões por aplicativo** (`/configuracoes/aplicativos`) lendo e gravando em `acessos.*` pelas funções existentes.
-- [ ] O portal chama `acessos.eu_posso('imobproj')` no login e bloqueia quem não pode entrar.
+- [x] Tabelas `imobproj.perfis` e `imobproj.perfil_permissoes` (menu × ver/criar/editar/excluir/aprovar). Coluna `profiles.perfil` (chave em texto, não uuid: a Central grava a chave do perfil em `<schema>.usuarios.perfil`).
+- [x] Perfis iniciais: Super admin (fixo), Gerente de projetos, Analista, Atendente, Prestador, Usuário-chave.
+- [x] Função `imobproj.pode(menu, acao)` usada pelo menu e pelas Server Actions (mais `imobproj.minhas_permissoes()` para o menu numa chamada só).
+- [x] Tela **Perfis e permissões** (`/configuracoes/perfis`): lista de perfis, matriz por menu, filtro, "Liberar todos", aviso de alterações não salvas.
+- [x] Tela **Permissões por aplicativo** (`/configuracoes/aplicativos`) lendo e gravando em `acessos.*` pelas funções existentes (`public.pa_*`).
+- [x] O portal chama a Central no login e no middleware (`public.pode_acessar_app('imobproj')`, o atalho público de `acessos.eu_posso`) e bloqueia quem não pode entrar.
+
+Pendências da Fase 2 que dependem do Wagner:
+- Rodar `bash scripts/migrar-nuvem.sh` (aplica `20261031000100_cadastros` e `20261031000200_perfis`). Até lá, o portal publicado funciona no modo de compatibilidade: menu completo, alterar só o super admin.
+- Rodar uma vez `supabase/central-acessos/registrar-imobproj.sql` no SQL Editor, para o IMOBPROJ aparecer na Central (entra com o controle desligado).
+- "Adicionar aplicativo" não existe na tela: a Central da nuvem não tem a função `pa_adicionar_aplicativo` (o código do imobdesk já a espera; ela ainda não foi publicada no banco).
 
 ## Fase 3 — Setores, números e fila
 

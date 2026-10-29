@@ -270,10 +270,12 @@ export function hrefDoItem(item: ItemMenu, projetoId?: string) {
 }
 
 /** O que o menu lateral precisa saber do perfil de acesso: super admin vê tudo; os demais, os ids com "ver". */
-export type AcessoMenu = { superAdmin: boolean; visiveis: string[] };
+export type AcessoMenu = { superAdmin: boolean; visiveis: string[]; legado?: boolean };
 
 function itemVisivel(item: ItemMenu, acesso: AcessoMenu) {
   if (acesso.superAdmin) return true;
+  // Banco sem perfis de acesso (antes da Fase 2): todos os menus, menos os só do super admin.
+  if (acesso.legado) return !item.soSuperAdmin;
   if (item.soSuperAdmin) return false;
   return Boolean(item.sempreVisivel) || acesso.visiveis.includes(item.id);
 }

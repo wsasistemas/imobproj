@@ -49,13 +49,10 @@ type UsuarioApp = {
 type Filtro = "todos" | "podem" | "bloqueados" | "nunca";
 
 const central = () => createClient().schema("public");
-const iniciais = (nome: string) =>
-  nome
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((p) => p[0]!.toUpperCase())
-    .join("");
+const iniciais = (nome: string) => {
+  const partes = nome.split(/\s+/).filter(Boolean);
+  return (partes.length > 1 ? partes[0]![0]! + partes[1]![0]! : nome.slice(0, 2)).toUpperCase();
+};
 const dataHora = (iso: string | null) =>
   iso ? new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "America/Sao_Paulo" }).format(new Date(iso)) : "—";
 
@@ -82,22 +79,20 @@ export function PermissoesAplicativo({ aplicativos }: { aplicativos: Aplicativo[
                   onClick={() => setSelecionado(a.schema_name)}
                   aria-pressed={ativo}
                   className={cn(
-                    "flex w-full items-center justify-between gap-3 px-4 py-3 text-left hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring",
+                    "flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring",
                     ativo && "bg-primary-soft",
                   )}
                 >
-                  <span className="flex min-w-0 items-center gap-2.5">
-                    <span className="grid size-8 shrink-0 place-items-center rounded-full bg-primary-soft text-[11px] font-bold text-primary">
-                      {iniciais(a.nome)}
-                    </span>
-                    <span className="min-w-0">
-                      <span className={cn("block truncate font-semibold", ativo && "text-primary")}>{a.nome}</span>
-                      <code className="block truncate text-[11.5px] text-muted-foreground">
-                        {a.schema_dados !== a.schema_name ? `${a.schema_name} · dados em ${a.schema_dados}` : a.schema_name}
-                      </code>
-                    </span>
+                  <span className="grid size-8 shrink-0 place-items-center rounded-full bg-primary-soft text-[11px] font-bold text-primary">
+                    {iniciais(a.nome)}
                   </span>
-                  <SeloControle app={a} />
+                  <span className="grid min-w-0 gap-1">
+                    <span className={cn("block truncate font-semibold", ativo && "text-primary")}>{a.nome}</span>
+                    <code className="block truncate text-[11.5px] text-muted-foreground">
+                      {a.schema_dados !== a.schema_name ? `${a.schema_name} · dados em ${a.schema_dados}` : a.schema_name}
+                    </code>
+                    <SeloControle app={a} />
+                  </span>
                 </button>
               </li>
             );
@@ -123,20 +118,22 @@ export function PermissoesAplicativo({ aplicativos }: { aplicativos: Aplicativo[
 }
 
 function SeloControle({ app }: { app: Aplicativo }) {
-  if (!app.ultima_verificacao_em)
-    return (
-      <Badge variant="outline" className="shrink-0 border-info/30 bg-info-bg text-info">
-        Novo · configurar
-      </Badge>
-    );
-  return app.controle_ativo ? (
-    <Badge variant="outline" className="shrink-0 border-success/30 bg-success-bg text-success">
-      Controle ativo
-    </Badge>
-  ) : (
-    <Badge variant="outline" className="shrink-0">
-      Controle desligado
-    </Badge>
+  // Sem ultima_verificacao_em: o aplicativo nunca chamou pode_acessar_app, então o bloqueio ainda não vale nele.
+  return (
+    <span className="flex flex-wrap gap-1">
+      {app.controle_ativo ? (
+        <Badge variant="outline" className="border-success/30 bg-success-bg text-success">
+          Controle ativo
+        </Badge>
+      ) : (
+        <Badge variant="outline">Controle desligado</Badge>
+      )}
+      {!app.ultima_verificacao_em && (
+        <Badge variant="outline" className="border-info/30 bg-info-bg text-info">
+          Verificação não instalada
+        </Badge>
+      )}
+    </span>
   );
 }
 
@@ -246,17 +243,17 @@ function DetalheAplicativo({ app }: { app: Aplicativo }) {
 
       <div className="grid gap-3.5 p-4">
         <div className="grid gap-3 sm:grid-cols-2">
-          <div className="grid gap-1.5">
+          <div className="grid content-start gap-1.5">
             <Label htmlFor="app-nome">Nome</Label>
             <Input id="app-nome" value={nome} onChange={(e) => setNome(e.target.value)} />
           </div>
-          <div className="grid gap-1.5">
+          <div className="grid content-start gap-1.5">
             <Label htmlFor="app-url">Endereço</Label>
             <Input id="app-url" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://" />
           </div>
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
-          <div className="grid gap-1.5">
+          <div className="grid content-start gap-1.5">
             <Label htmlFor="app-schema">{app.schema_dados !== app.schema_name ? "Chave · schema de dados" : "Schema"}</Label>
             <Input
               id="app-schema"
@@ -264,7 +261,7 @@ function DetalheAplicativo({ app }: { app: Aplicativo }) {
               value={app.schema_dados !== app.schema_name ? `${app.schema_name} · ${app.schema_dados}` : app.schema_name}
             />
           </div>
-          <div className="grid gap-1.5">
+          <div className="grid content-start gap-1.5">
             <Label id="app-novos-rotulo">Logins novos da WSA</Label>
             <Select
               items={[

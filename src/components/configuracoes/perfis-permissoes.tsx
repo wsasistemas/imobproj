@@ -162,14 +162,13 @@ export function PerfisPermissoes({ perfis, regras }: { perfis: Perfil[]; regras:
                     <span className="block truncate text-[12px] text-muted-foreground">
                       {p.fixo ? "Acesso total, não editável" : `${p.usuarios} ${p.usuarios === 1 ? "usuário" : "usuários"}`}
                     </span>
+                    {ativo && mudancas > 0 && (
+                      <Badge variant="outline" className="mt-1 border-warning/40 bg-warning-bg text-warning">
+                        Alterações não salvas
+                      </Badge>
+                    )}
                   </span>
-                  {p.fixo ? (
-                    <Lock size={15} className="shrink-0 text-muted-foreground" aria-label="Não editável" />
-                  ) : ativo && mudancas > 0 ? (
-                    <Badge variant="outline" className="shrink-0 border-warning/40 bg-warning-bg text-warning">
-                      Alterações não salvas
-                    </Badge>
-                  ) : null}
+                  {p.fixo && <Lock size={15} className="shrink-0 text-muted-foreground" aria-label="Não editável" />}
                 </button>
               </li>
             );

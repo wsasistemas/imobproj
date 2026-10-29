@@ -20,6 +20,7 @@ import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ROTULO_PAPEL, type PapelMembro } from "@/lib/projeto/tipos";
 import { createClient } from "@/lib/supabase/client";
+import { MSG_BANCO_DESATUALIZADO, ehBancoDesatualizado } from "@/lib/acoes";
 import { cn } from "@/lib/utils";
 import { EstadoVazio, ErroBloco, ErroCampo, PilulaFiltro, RotuloSecao, SkeletonListaPainel } from "./blocos";
 import { ROTULO_TIPO_ORGANIZACAO, esquemaUsuario, type TipoOrganizacao } from "./esquemas";
@@ -61,12 +62,13 @@ export function Usuarios({ podeEditar, podeDefinirPerfil }: { podeEditar: boolea
   const usuarios = useQuery({
     queryKey: CHAVE,
     queryFn: async () => {
-      const { data, error } = await createClient()
-        .from("profiles")
-        .select(
-          "id, nome, email, telefone_whatsapp, cargo, perfil, ativo, atende_whatsapp, is_super_admin, organization_id, organizations(nome, nome_fantasia, tipo), team_members(team_id, teams(nome)), project_members(role, ativo, projects(codigo, nome))",
-        )
-        .order("nome");
+      const colunas =
+        "id, nome, email, telefone_whatsapp, cargo, ativo, atende_whatsapp, is_super_admin, organization_id, organizations(nome, nome_fantasia, tipo), team_members(team_id, teams(nome)), project_members(role, ativo, projects(codigo, nome))";
+      const sb = createClient();
+      let resposta: { data: unknown[] | null; error: unknown } = await sb.from("profiles").select(`${colunas}, perfil`).order("nome");
+      // Banco sem a Fase 2 (coluna perfil): lista do mesmo jeito, sem o perfil de acesso.
+      if (ehBancoDesatualizado(resposta.error)) resposta = await sb.from("profiles").select(colunas).order("nome");
+      const { data, error } = resposta;
       if (error) throw error;
       return (data ?? []) as unknown as Usuario[];
     },
@@ -82,11 +84,11 @@ export function Usuarios({ podeEditar, podeDefinirPerfil }: { podeEditar: boolea
       ]);
       if (empresas.error) throw empresas.error;
       if (equipes.error) throw equipes.error;
-      if (perfis.error) throw perfis.error;
       return {
         empresas: (empresas.data ?? []) as Empresa[],
         equipes: (equipes.data ?? []) as Opcao[],
-        perfis: (perfis.data ?? []) as { chave: string; nome: string }[],
+        // Sem a tabela perfis (banco antes da Fase 2): a ficha abre sem o seletor de perfil.
+        perfis: (perfis.error ? [] : (perfis.data ?? [])) as { chave: string; nome: string }[],
       };
     },
   });
@@ -113,7 +115,7 @@ export function Usuarios({ podeEditar, podeDefinirPerfil }: { podeEditar: boolea
   const selecionado = aberto && aberto !== "novo" ? lista.find((u) => u.id === aberto) ?? null : null;
 
   if (usuarios.isPending) return <SkeletonListaPainel linhas={6} />;
-  if (usuarios.isError) return <ErroBloco texto="Não foi possível carregar os usuários." onTentar={() => usuarios.refetch()} />;
+  if (usuarios.isError) return <ErroBloco texto={ehBancoDesatualizado(usuarios.error) ? MSG_BANCO_DESATUALIZADO : "Não foi possível carregar os usuários."} onTentar={() => usuarios.refetch()} />;
 
   return (
     <div className="grid gap-4">

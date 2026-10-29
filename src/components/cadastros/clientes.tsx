@@ -26,6 +26,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { createClient } from "@/lib/supabase/client";
+import { MSG_BANCO_DESATUALIZADO, ehBancoDesatualizado } from "@/lib/acoes";
 import { cn } from "@/lib/utils";
 import { EstadoVazio, ErroBloco, ErroCampo, PilulaFiltro, RotuloSecao, SkeletonListaPainel } from "./blocos";
 import {
@@ -134,7 +135,7 @@ export function Clientes({ podeEditar }: { podeEditar: boolean }) {
   }
 
   if (empresas.isPending) return <SkeletonListaPainel />;
-  if (empresas.isError) return <ErroBloco texto="Não foi possível carregar os clientes." onTentar={() => empresas.refetch()} />;
+  if (empresas.isError) return <ErroBloco texto={ehBancoDesatualizado(empresas.error) ? MSG_BANCO_DESATUALIZADO : "Não foi possível carregar os clientes."} onTentar={() => empresas.refetch()} />;
 
   return (
     <div className="grid gap-4">

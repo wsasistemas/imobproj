@@ -21,3 +21,15 @@ export function mensagemErroBanco(error: { code?: string; message?: string } | n
   if (error.code === "P0001" && error.message) return error.message; // raise exception dos triggers
   return "Não foi possível concluir a operação. Tente novamente.";
 }
+
+/**
+ * Banco desatualizado: tabela, coluna ou função que uma migration ainda não criou (ex.: a nuvem antes do
+ * scripts/migrar-nuvem.sh). As telas mostram um aviso claro em vez de quebrar.
+ */
+export function ehBancoDesatualizado(error: unknown) {
+  const code = (error as { code?: string } | null)?.code ?? "";
+  return ["42P01", "42703", "42883", "PGRST200", "PGRST202", "PGRST204", "PGRST205"].includes(code);
+}
+
+export const MSG_BANCO_DESATUALIZADO =
+  "O banco ainda não recebeu a atualização desta tela. Peça ao administrador para aplicar as migrations pendentes.";

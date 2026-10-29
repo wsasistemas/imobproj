@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { PerfisPermissoes, type Perfil, type RegraPerfil } from "@/components/configuracoes/perfis-permissoes";
 import { CabecalhoPagina } from "@/components/shell/cabecalho-pagina";
 import { SemAcesso } from "@/components/shell/sem-acesso";
+import { MSG_BANCO_DESATUALIZADO, ehBancoDesatualizado } from "@/lib/acoes";
 import { minhasPermissoes } from "@/lib/perfil-acesso";
 import { createClient } from "@/lib/supabase/server";
 
@@ -31,8 +32,10 @@ export default async function PerfisPage() {
         subtitulo="Cada perfil define quais menus a pessoa vê e o que pode fazer em cada um."
       />
       {perfis.error || regras.error ? (
-        <p role="alert" className="text-destructive">
-          Não foi possível carregar os perfis. Recarregue a página.
+        <p role="alert" className="rounded-[10px] border border-border bg-card px-4 py-3 text-destructive">
+          {ehBancoDesatualizado(perfis.error ?? regras.error)
+            ? MSG_BANCO_DESATUALIZADO
+            : "Não foi possível carregar os perfis. Recarregue a página."}
         </p>
       ) : (
         <PerfisPermissoes perfis={lista} regras={(regras.data ?? []) as RegraPerfil[]} />

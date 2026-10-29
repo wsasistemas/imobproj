@@ -16,14 +16,15 @@ type Props = { searchParams: Promise<{ aba?: string }> };
 // Cadastros › Usuários (antiga "Equipe e permissões"). Abas: cadastro das pessoas, acesso por projeto
 // (membros e papéis) e a matriz do que cada papel pode fazer. O cadastro altera quem o perfil autoriza; papéis por projeto e perfil, só o super admin.
 export default async function UsuariosPage({ searchParams }: Props) {
-  const [{ aba }, superAdmin, cookieStore, permissoes, podeEditar] = await Promise.all([
+  const [{ aba }, superAdmin, cookieStore, permissoes, podeVer, podeEditar] = await Promise.all([
     searchParams,
     ehSuperAdmin(),
     cookies(),
     minhasPermissoes(),
+    pode("cadastros_usuarios"),
     pode("cadastros_usuarios", "editar"),
   ]);
-  if (!permissoes.superAdmin && !permissoes.menus.cadastros_usuarios?.ver) return <SemAcesso menu="cadastros_usuarios" />;
+  if (!podeVer) return <SemAcesso menu="cadastros_usuarios" />;
   const atual = aba === "projetos" || aba === "matriz" ? aba : "usuarios";
 
   return (
@@ -38,7 +39,7 @@ export default async function UsuariosPage({ searchParams }: Props) {
           { label: "Matriz de permissões", href: "/cadastros/usuarios?aba=matriz", ativa: atual === "matriz" },
         ]}
       />
-      {atual === "usuarios" && <Usuarios podeEditar={podeEditar} podeDefinirPerfil={permissoes.superAdmin} />}
+      {atual === "usuarios" && <Usuarios podeEditar={podeEditar} podeDefinirPerfil={permissoes.superAdmin && !permissoes.legado} />}
       {atual === "projetos" && (
         <MembrosProjeto superAdmin={superAdmin} projetoInicialId={cookieStore.get(COOKIE_PROJETO_ATUAL)?.value} />
       )}

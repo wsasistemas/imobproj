@@ -30,6 +30,7 @@ import { createClient } from "@/lib/supabase/client";
 import { EstadoVazio, ErroBloco, ErroCampo } from "./blocos";
 import { esquemaEquipe } from "./esquemas";
 import { executar, iniciais } from "./util";
+import { MSG_BANCO_DESATUALIZADO, ehBancoDesatualizado } from "@/lib/acoes";
 
 type Pessoa = { id: string; nome: string; email: string | null; cargo: string | null };
 type Equipe = {
@@ -102,7 +103,7 @@ export function Equipes({ podeEditar }: { podeEditar: boolean }) {
         ))}
       </div>
     );
-  if (equipes.isError) return <ErroBloco texto="Não foi possível carregar as equipes." onTentar={() => equipes.refetch()} />;
+  if (equipes.isError) return <ErroBloco texto={ehBancoDesatualizado(equipes.error) ? MSG_BANCO_DESATUALIZADO : "Não foi possível carregar as equipes."} onTentar={() => equipes.refetch()} />;
 
   const lista = equipes.data ?? [];
 

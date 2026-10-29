@@ -64,6 +64,11 @@ export async function updateSession(request: NextRequest) {
       url.search = "?motivo=sem-acesso";
       const resposta = NextResponse.redirect(url);
       response.cookies.getAll().forEach((cookie) => resposta.cookies.set(cookie));
+      // A sessão já foi revogada no Auth; apaga também os cookies dela no navegador.
+      request.cookies
+        .getAll()
+        .filter((c) => c.name.startsWith("sb-"))
+        .forEach((c) => resposta.cookies.delete(c.name));
       resposta.cookies.delete(COOKIE_ACESSO);
       return resposta;
     }

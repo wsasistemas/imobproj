@@ -10,6 +10,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   // Menu pelo perfil de acesso (D1): super admin vê tudo; os demais, os itens com "ver".
   const acesso = {
     superAdmin: permissoes.superAdmin,
+    legado: permissoes.legado,
     visiveis: Object.entries(permissoes.menus)
       .filter(([, p]) => p.ver)
       .map(([menu]) => menu),
