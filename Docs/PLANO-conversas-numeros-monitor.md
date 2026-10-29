@@ -85,9 +85,13 @@ Verificado no local (29/10/2026), super admin no PRJ-014: indicadores, seção R
 
 ## Fase 5 — Aba Anotações da equipe
 
-- [ ] Rota `/projetos/[id]/anotacoes`, aba no projeto: cada membro vê as equipes dele; gerente, diretor e super admin veem todas.
-- [ ] Lista de grupos por equipe, busca e período; leitura no formato WhatsApp, sem compositor.
-- [ ] Sem nenhuma marca de OS ou evidência, sem link para OS.
+- [x] Rota `/projetos/[id]/anotacoes`, aba no projeto: cada membro vê as equipes dele; gerente, diretor e super admin veem todas.
+- [x] Lista de grupos por equipe, busca e período; leitura no formato WhatsApp, sem compositor.
+- [x] Sem nenhuma marca de OS ou evidência, sem link para OS.
+- [x] Mídia das anotações assinada no servidor (`urlMidiaAnotacao`), depois de conferir `fn_pode_ver_anotacao`: o membro da equipe que não vê o projeto inteiro também abre a foto.
+
+Verificado no local (29/10/2026): grupo com 3 mensagens lido na aba, separado por equipe, sem marcas de OS/evidência.
+Observação: o texto que as pessoas escreveram (ex.: "Enviei a OS 233") aparece como foi escrito; a aba só não liga nem marca nada de OS.
 
 ## Fase 6 — Verificação ponta a ponta
 

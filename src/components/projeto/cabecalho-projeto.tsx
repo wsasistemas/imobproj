@@ -16,6 +16,7 @@ const ABAS = [
   { label: "Atas de reunião", trecho: "/atas" },
   { label: "Ordens de Serviço", trecho: "/os" },
   { label: "Conversas", trecho: "/conversas" },
+  { label: "Anotações da equipe", trecho: "/anotacoes" },
 ];
 
 const data = (iso: string | null) => (iso ? new Date(`${iso}T12:00:00`).toLocaleDateString("pt-BR") : "—");
