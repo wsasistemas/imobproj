@@ -54,6 +54,7 @@ function mensagemDeErro(mensagem: string): string {
   if (m.includes("email not confirmed")) return "Confirme o seu e-mail antes de entrar.";
   if (m.includes("rate limit") || m.includes("too many")) return "Muitas tentativas. Aguarde alguns minutos.";
   if (m.includes("fetch")) return "Sem conexão com o servidor. Tente novamente.";
+  if (m.includes("invalid api key")) return "O sistema está com a chave do servidor errada. Avise o administrador.";
   return "Não foi possível entrar. Tente novamente.";
 }
 
