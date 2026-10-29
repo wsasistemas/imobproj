@@ -113,6 +113,12 @@ export function Usuarios({ podeEditar, podeDefinirPerfil }: { podeEditar: boolea
     queryFn: () => executar(convitesPendentesUsuarios()),
     select: (ids) => new Set(ids),
   });
+  // Reenvio direto da lista, sem abrir a ficha.
+  const mReenviar = useMutation({
+    mutationFn: (id: string) => executar(reenviarConviteUsuario({ id })),
+    onSuccess: (msg) => toast.success(msg),
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   const lista = useMemo(() => usuarios.data ?? [], [usuarios.data]);
   const contagem = (f: Filtro) => (f === "todos" ? lista.length : lista.filter((u) => u.organizations?.tipo === f).length);
@@ -228,7 +234,28 @@ export function Usuarios({ podeEditar, podeDefinirPerfil }: { podeEditar: boolea
                       </TableCell>
                       <TableCell className="pr-4">
                         {convite ? (
-                          <Badge variant="warning">Convite enviado</Badge>
+                          <div className="flex items-center gap-2 whitespace-nowrap">
+                            <Badge variant="warning">Convite enviado</Badge>
+                            {podeEditar && (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                disabled={mReenviar.isPending && mReenviar.variables === u.id}
+                                onClick={(ev) => {
+                                  ev.stopPropagation();
+                                  mReenviar.mutate(u.id);
+                                }}
+                              >
+                                {mReenviar.isPending && mReenviar.variables === u.id ? (
+                                  <Loader2 className="animate-spin" aria-hidden="true" />
+                                ) : (
+                                  <Send aria-hidden="true" />
+                                )}
+                                Reenviar convite
+                              </Button>
+                            )}
+                          </div>
                         ) : (
                           <Badge variant={u.ativo ? "success" : "neutral"}>{u.ativo ? "Ativo" : "Inativo"}</Badge>
                         )}
