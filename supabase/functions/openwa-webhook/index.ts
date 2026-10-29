@@ -48,6 +48,8 @@ type Grupo = {
   nome: string;
   auto_evidencia: boolean;
   auto_os: boolean;
+  /** Preenchido enquanto o grupo está em Anotações da equipe (ausente antes da migration 20261101000100). */
+  anotacao_desde?: string | null;
 };
 
 declare const EdgeRuntime: { waitUntil(p: Promise<unknown>): void } | undefined;
@@ -121,12 +123,20 @@ async function processar(admin: Cliente, env: EnvelopeOpenwa): Promise<void> {
 
   const { data: g } = await admin
     .from("wa_groups")
-    .select("id, project_id, session_id, nome, auto_evidencia, auto_os")
+    // "*" e não a lista de colunas: funciona antes e depois da migration que cria anotacao_desde.
+    .select("*")
     .eq("wa_group_id", msg.chatId)
     .eq("ativo", true)
     .maybeSingle();
   const grupo = g as Grupo | null;
   if (!grupo) return log("openwa.webhook_ignorado", { motivo: "grupo não cadastrado", chatId: msg.chatId });
+
+  // Um grupo, um número: se outro número do sistema também estiver no grupo, só o vinculado grava.
+  if (sessao && grupo.session_id && sessao.id !== grupo.session_id) {
+    return log("openwa.webhook_ignorado", { motivo: "número não vinculado ao grupo", chatId: msg.chatId });
+  }
+  // A mensagem que tira o grupo de Anotações da equipe não gera evidência nem OS.
+  const automacoes = !grupo.anotacao_desde;
 
   // Sessão desconhecida pelo sessionId (ex.: id ainda não preenchido): usa a do grupo para o heartbeat.
   if (!sessao && grupo.session_id) {
@@ -175,7 +185,7 @@ async function processar(admin: Cliente, env: EnvelopeOpenwa): Promise<void> {
   }
 
   // Evidência automática: mídia que cita uma OS aberta do projeto
-  if (arquivo && grupo.auto_evidencia) {
+  if (arquivo && automacoes && grupo.auto_evidencia) {
     const numero = numeroOsCitada(msg.texto);
     if (numero !== null) {
       try {
@@ -187,7 +197,7 @@ async function processar(admin: Cliente, env: EnvelopeOpenwa): Promise<void> {
   }
 
   // #OS → OS em rascunho
-  if (grupo.auto_os && /^#OS\b/i.test(msg.texto)) {
+  if (automacoes && grupo.auto_os && /^#OS\b/i.test(msg.texto)) {
     try {
       await criarOsRascunho(admin, grupo, msg, autorId);
     } catch (e) {

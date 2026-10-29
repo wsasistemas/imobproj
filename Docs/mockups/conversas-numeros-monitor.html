@@ -1,0 +1,561 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Números e Monitor</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<style>
+/* Mockup IMOBPROJ: vários números OpenWA, grupo → equipe → projeto e Monitor dentro de Conversas.
+   Mesma casca do mockup aprovado (implantacao-final.html): menu escuro + cabeçalho + conteúdo. */
+:root {
+  --sidebar-bg: oklch(0.25 0.04 255); --sidebar-hover: oklch(0.31 0.045 255); --sidebar-text: oklch(0.87 0.015 250); --sidebar-label: oklch(0.7 0.025 250);
+  --primary: oklch(0.55 0.11 250); --primary-hover: oklch(0.46 0.1 252); --primary-soft: oklch(0.95 0.022 250); --primary-border: oklch(0.85 0.05 250);
+  --abobora: oklch(0.8 0.11 62); --abobora-soft: oklch(0.965 0.032 68); --abobora-dark: oklch(0.5 0.11 50);
+  --menu-ativo: linear-gradient(90deg, oklch(0.55 0.11 250) 55%, oklch(0.8 0.11 62));
+  --page: oklch(0.972 0.016 40); --surface: #ffffff; --border: oklch(0.905 0.02 40); --border-soft: oklch(0.94 0.014 40);
+  --text: oklch(0.24 0.03 255); --muted: oklch(0.5 0.025 255); --table-head: oklch(0.985 0.008 40);
+  --ok-bg: #e7f5ec; --ok: #166534; --al-bg: #fef3c7; --al: #92400e; --in-bg: #e6eefd; --in: #1d4ed8;
+  --pe-bg: #fdecec; --pe: #b91c1c; --ro-bg: #f1eafd; --ro: #6d28d9;
+  --dot-sim: #22c55e; --dot-pausa: #f59e0b; --dot-nao: #ef4444; --dot-off: #94a3b8;
+  --wa-bg: #efeae2; --wa-in: #ffffff; --wa-out: #d9fdd3; --wa-head: #f0f2f5; --wa-green: #00a884; --wa-text: #111b21; --wa-muted: #667781;
+  --font: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --sidebar-bg: oklch(0.165 0.02 255); --sidebar-hover: oklch(0.26 0.025 255); --sidebar-text: oklch(0.8 0.015 250); --sidebar-label: oklch(0.62 0.02 250);
+  --primary: oklch(0.6 0.11 250); --primary-hover: oklch(0.68 0.1 250); --primary-soft: oklch(0.3 0.05 250); --primary-border: oklch(0.42 0.07 250);
+  --abobora-soft: oklch(0.32 0.05 62); --abobora-dark: oklch(0.82 0.11 62);
+  --page: oklch(0.19 0.02 255); --surface: oklch(0.235 0.022 255); --border: oklch(0.32 0.02 255); --border-soft: oklch(0.28 0.02 255);
+  --text: oklch(0.95 0.006 250); --muted: oklch(0.74 0.02 250); --table-head: oklch(0.26 0.022 255);
+  --ok-bg: #11301e; --ok: #74e0a0; --al-bg: #36270e; --al: #f8c46a; --in-bg: #14223d; --in: #9ab8ff; --pe-bg: #371418; --pe: #fca5a5; --ro-bg: #251a3b; --ro: #c9b8ff;
+  --wa-bg: #0b141a; --wa-in: #202c33; --wa-out: #005c4b; --wa-head: #202c33; --wa-text: #e9edef; --wa-muted: #8696a0;
+  color-scheme: dark } }
+:root[data-theme="dark"] {
+  --sidebar-bg: oklch(0.165 0.02 255); --sidebar-hover: oklch(0.26 0.025 255); --sidebar-text: oklch(0.8 0.015 250); --sidebar-label: oklch(0.62 0.02 250);
+  --primary: oklch(0.6 0.11 250); --primary-hover: oklch(0.68 0.1 250); --primary-soft: oklch(0.3 0.05 250); --primary-border: oklch(0.42 0.07 250);
+  --abobora-soft: oklch(0.32 0.05 62); --abobora-dark: oklch(0.82 0.11 62);
+  --page: oklch(0.19 0.02 255); --surface: oklch(0.235 0.022 255); --border: oklch(0.32 0.02 255); --border-soft: oklch(0.28 0.02 255);
+  --text: oklch(0.95 0.006 250); --muted: oklch(0.74 0.02 250); --table-head: oklch(0.26 0.022 255);
+  --ok-bg: #11301e; --ok: #74e0a0; --al-bg: #36270e; --al: #f8c46a; --in-bg: #14223d; --in: #9ab8ff; --pe-bg: #371418; --pe: #fca5a5; --ro-bg: #251a3b; --ro: #c9b8ff;
+  --wa-bg: #0b141a; --wa-in: #202c33; --wa-out: #005c4b; --wa-head: #202c33; --wa-text: #e9edef; --wa-muted: #8696a0;
+  color-scheme: dark }
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { font-family: var(--font); font-size: 15px; color: var(--text); background: var(--page); line-height: 1.45; }
+button { font: inherit; cursor: pointer; }
+.app { display: grid; grid-template-columns: 248px 1fr; min-height: 100vh; }
+.side { background: var(--sidebar-bg); color: var(--sidebar-text); padding: 18px 12px; }
+.marca { font-weight: 700; color: #fff; padding: 4px 10px 18px; letter-spacing: .02em; }
+.side p { margin: 16px 10px 6px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--sidebar-label); }
+.side button { display: flex; width: 100%; align-items: center; gap: 10px; padding: 9px 10px; border: 0; border-radius: 8px; background: none; color: inherit; text-align: left; }
+.side button:hover { background: var(--sidebar-hover); }
+.side button[aria-current="page"] { background: var(--menu-ativo); color: #fff; font-weight: 600; }
+.side .ic { width: 22px; height: 22px; border-radius: 6px; display: grid; place-items: center; font-size: 13px; }
+main { min-width: 0; }
+.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 28px; background: var(--surface); border-bottom: 1px solid var(--border); }
+.top small { color: var(--muted); }
+.wrap { padding: 24px 28px 48px; max-width: 1400px; }
+h1 { font-size: 22px; margin: 0 0 4px; }
+.sub { color: var(--muted); margin: 0 0 20px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px; margin-bottom: 18px; }
+.card h2 { font-size: 16px; margin: 0 0 4px; }
+.card .desc { color: var(--muted); margin: 0 0 14px; font-size: 14px; }
+.row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.sp { flex: 1; }
+.btn { border: 1px solid var(--border); background: var(--surface); color: var(--text); border-radius: 9px; padding: 8px 14px; font-weight: 600; }
+.btn:hover { border-color: var(--primary-border); }
+.btn.pri { background: var(--primary); border-color: var(--primary); color: #fff; }
+.btn.pri:hover { background: var(--primary-hover); }
+.btn.sm { padding: 5px 10px; font-size: 13px; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th { text-align: left; font-size: 12px; color: var(--muted); font-weight: 600; background: var(--table-head); padding: 9px 10px; border-bottom: 1px solid var(--border); }
+td { padding: 10px; border-bottom: 1px solid var(--border-soft); vertical-align: middle; }
+.tw { overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; }
+.pill { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
+.ok { background: var(--ok-bg); color: var(--ok); } .al { background: var(--al-bg); color: var(--al); } .pe { background: var(--pe-bg); color: var(--pe); } .in { background: var(--in-bg); color: var(--in); } .ro { background: var(--ro-bg); color: var(--ro); }
+.dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex: none; }
+.mono { font-variant-numeric: tabular-nums; }
+.muted { color: var(--muted); }
+.tela { display: none; } .tela.on { display: block; }
+.nota { border-left: 4px solid var(--abobora); background: var(--abobora-soft); border-radius: 8px; padding: 10px 14px; font-size: 14px; margin: 10px 0 0; }
+.nota b { color: var(--abobora-dark); }
+
+/* Hierarquia */
+.hier { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; align-items: stretch; }
+.hier div { border: 1px solid var(--border); border-radius: 10px; padding: 12px; background: var(--table-head); position: relative; }
+.hier div:not(:last-child)::after { content: "→"; position: absolute; right: -11px; top: 50%; transform: translateY(-50%); color: var(--muted); font-weight: 700; }
+.hier strong { display: block; font-size: 14px; } .hier span { font-size: 13px; color: var(--muted); }
+
+/* Diálogo */
+dialog { border: 1px solid var(--border); border-radius: 14px; padding: 0; width: min(560px, calc(100vw - 32px)); background: var(--surface); color: var(--text); }
+dialog::backdrop { background: rgb(0 0 0 / .45); }
+.dh { padding: 16px 20px; border-bottom: 1px solid var(--border); font-weight: 700; }
+.db { padding: 16px 20px; display: grid; gap: 12px; }
+.df { padding: 12px 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px; }
+label { font-size: 13px; font-weight: 600; display: grid; gap: 5px; }
+input, select { font: inherit; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); }
+.qr { width: 168px; height: 168px; margin: 4px auto; background:
+  conic-gradient(from 90deg at 25% 25%, var(--text) 0 25%, transparent 0) 0 0/24px 24px,
+  repeating-linear-gradient(45deg, var(--text) 0 4px, transparent 4px 10px); border: 10px solid #fff; outline: 1px solid var(--border); border-radius: 6px; }
+
+/* Abas do projeto */
+.abas { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 16px; overflow-x: auto; }
+.abas button { border: 0; background: none; padding: 10px 14px; color: var(--muted); font-weight: 600; border-bottom: 2px solid transparent; white-space: nowrap; }
+.abas button[aria-selected="true"] { color: var(--primary); border-bottom-color: var(--primary); }
+.seg { display: inline-flex; border: 1px solid var(--border); border-radius: 9px; overflow: hidden; }
+.seg button { border: 0; background: var(--surface); color: var(--muted); padding: 7px 14px; font-weight: 600; font-size: 14px; }
+.seg button[aria-pressed="true"] { background: var(--primary-soft); color: var(--primary); }
+
+/* Monitor */
+.kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+.kpi { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; }
+.kpi b { font-size: 24px; display: block; } .kpi span { color: var(--muted); font-size: 13px; }
+.mon { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+.conv { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px; text-align: left; color: var(--text); display: grid; gap: 8px; width: 100%; }
+.conv:hover { border-color: var(--primary-border); box-shadow: 0 2px 10px rgb(0 0 0 / .06); }
+.conv.arq { opacity: .78; }
+.ch { display: flex; align-items: center; gap: 10px; }
+.av { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; color: #fff; flex: none; font-size: 14px; }
+.ch .t { min-width: 0; flex: 1; } .ch .t strong { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ch .t small { color: var(--muted); font-size: 12px; }
+.prev { font-size: 13px; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 38px; }
+.prev b { color: var(--text); font-weight: 600; }
+.badge { background: var(--wa-green); color: #fff; border-radius: 999px; font-size: 11px; font-weight: 700; padding: 1px 7px; }
+.meta { display: flex; gap: 6px; flex-wrap: wrap; }
+.grp-t { font-size: 13px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin: 18px 0 10px; display: flex; align-items: center; gap: 8px; }
+
+/* Tela tipo WhatsApp */
+.wa { display: grid; grid-template-columns: 340px 1fr; height: 640px; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: var(--surface); }
+.wa-l { border-right: 1px solid var(--border); display: flex; flex-direction: column; min-width: 0; }
+.wa-l .hd { background: var(--wa-head); padding: 12px 14px; display: grid; gap: 8px; }
+.wa-l .hd input { width: 100%; }
+.wa-l .tabs { display: flex; gap: 6px; }
+.wa-l .tabs button { border: 0; border-radius: 999px; padding: 4px 12px; font-size: 13px; background: var(--surface); color: var(--wa-muted); }
+.wa-l .tabs button[aria-pressed="true"] { background: #d9fdd3; color: #008069; font-weight: 600; }
+.wa-list { overflow-y: auto; flex: 1; }
+.wa-it { display: flex; gap: 10px; padding: 10px 14px; border: 0; border-bottom: 1px solid var(--border-soft); background: var(--surface); width: 100%; text-align: left; color: var(--text); }
+.wa-it:hover, .wa-it[aria-current="true"] { background: var(--wa-head); }
+.wa-it .t { flex: 1; min-width: 0; }
+.wa-it .l1 { display: flex; justify-content: space-between; gap: 6px; } .wa-it .l1 strong { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
+.wa-it .l1 small { color: var(--wa-muted); font-size: 12px; flex: none; }
+.wa-it .l2 { display: flex; justify-content: space-between; gap: 6px; color: var(--wa-muted); font-size: 13px; } .wa-it .l2 span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wa-r { display: flex; flex-direction: column; min-width: 0; background: var(--wa-bg); }
+.wa-r .hd { background: var(--wa-head); padding: 10px 16px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--border); color: var(--wa-text); }
+.wa-r .hd small { color: var(--wa-muted); display: block; font-size: 12px; }
+.msgs { flex: 1; overflow-y: auto; padding: 18px 6%; display: flex; flex-direction: column; gap: 6px; }
+.dia { align-self: center; background: var(--wa-head); color: var(--wa-muted); font-size: 12px; border-radius: 8px; padding: 3px 10px; margin: 6px 0; }
+.b { max-width: 70%; padding: 6px 9px 4px; border-radius: 8px; font-size: 14px; color: var(--wa-text); box-shadow: 0 1px .5px rgb(0 0 0 / .13); }
+.b.in { background: var(--wa-in); align-self: flex-start; } .b.out { background: var(--wa-out); align-self: flex-end; }
+.b .au { font-size: 12.5px; font-weight: 600; display: block; }
+.b .hr { font-size: 11px; color: var(--wa-muted); float: right; margin: 6px 0 0 10px; }
+.b .cit { border-left: 4px solid #06cf9c; background: rgb(0 0 0 / .05); border-radius: 6px; padding: 4px 8px; font-size: 12.5px; margin-bottom: 4px; color: var(--wa-muted); }
+.b .tag { font-size: 11px; font-weight: 700; color: var(--ro); }
+.comp { background: var(--wa-head); padding: 10px 14px; display: flex; gap: 8px; align-items: center; }
+.comp input { flex: 1; border-radius: 10px; border: 0; padding: 10px 12px; }
+.ro-bar { background: var(--al-bg); color: var(--al); padding: 10px 14px; font-size: 14px; display: flex; gap: 10px; align-items: center; }
+.vazio { display: grid; place-items: center; height: 100%; color: var(--wa-muted); text-align: center; padding: 20px; }
+
+/* Base de Conhecimento */
+.kb { display: grid; grid-template-columns: 1fr 340px; gap: 14px; }
+.kb-chat { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
+.kb-msgs { padding: 18px; display: grid; gap: 14px; }
+.kb-q { justify-self: end; max-width: 80%; background: var(--primary-soft); color: var(--text); border-radius: 12px 12px 2px 12px; padding: 10px 14px; }
+.kb-a { max-width: 92%; border: 1px solid var(--border); border-radius: 12px 12px 12px 2px; padding: 4px 16px 10px; font-size: 14.5px; }
+.kb-a ol { padding-left: 20px; }
+.kb-fb { display: flex; gap: 8px; align-items: center; color: var(--muted); font-size: 13px; border-top: 1px solid var(--border-soft); padding-top: 10px; }
+.cit-n { display: inline-grid; place-items: center; min-width: 18px; height: 18px; border-radius: 5px; background: var(--abobora-soft); color: var(--abobora-dark); font-size: 11px; font-weight: 700; padding: 0 4px; vertical-align: 1px; }
+.kb-chat .comp { background: var(--table-head); border-top: 1px solid var(--border); }
+.kb-chat .comp input { border: 1px solid var(--border); }
+.kb-sug { display: flex; gap: 6px; flex-wrap: wrap; padding: 0 14px 12px; background: var(--table-head); }
+.kb-src { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px; align-self: start; }
+.src { display: flex; gap: 10px; text-align: left; width: 100%; border: 1px solid var(--border); background: var(--surface); color: var(--text); border-radius: 10px; padding: 10px; margin-bottom: 8px; }
+.src:hover { border-color: var(--primary-border); }
+.src strong { display: block; font-size: 13.5px; } .src small { display: block; color: var(--muted); font-size: 12px; } .src span:last-child { display: block; font-size: 12.5px; color: var(--muted); margin-top: 4px; }
+@media (max-width: 900px) { .kb { grid-template-columns: 1fr; } }
+
+/* Análise */
+.dec { display: grid; gap: 10px; }
+.dec > div { border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+.dec strong { display: block; margin-bottom: 2px; }
+.dec p { margin: 4px 0 0; font-size: 14px; color: var(--muted); }
+.ok-l li::marker { color: var(--ok); }
+ul { margin: 6px 0; padding-left: 20px; } li { margin: 3px 0; }
+
+@media (max-width: 900px) {
+  .app { grid-template-columns: 1fr; }
+  .side { display: flex; gap: 4px; overflow-x: auto; padding: 8px 16px; }
+  .side .marca, .side p { display: none; }
+  .side button { white-space: nowrap; width: auto; }
+  .top, .wrap { padding-left: 16px; padding-right: 16px; }
+  .hier, .kpis { grid-template-columns: 1fr 1fr; }
+  .hier div::after { display: none; }
+  .wa { grid-template-columns: 1fr; height: auto; }
+  .wa-l { max-height: 300px; border-right: 0; border-bottom: 1px solid var(--border); }
+  .wa-r { min-height: 480px; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <nav class="side" aria-label="Telas do mockup">
+    <div class="marca">IMOBPROJ · mockup</div>
+    <p>Administração</p>
+    <button data-tela="numeros" aria-current="page"><span class="ic" style="background:#22c55e">☏</span>1. Números (sessões)</button>
+    <button data-tela="grupos"><span class="ic" style="background:#3b82f6">⌘</span>2. Grupos e equipes</button>
+    <p>Projeto</p>
+    <button data-tela="monitor"><span class="ic" style="background:#14b8a6">◉</span>3. Conversas › Monitor</button>
+    <button data-tela="chat"><span class="ic" style="background:#00a884">✆</span>4. Conversa aberta</button>
+    <button data-tela="anotacoes"><span class="ic" style="background:#8b5cf6">✎</span>5. Anotações da equipe</button>
+    <p>Menu principal</p>
+    <button data-tela="base"><span class="ic" style="background:#ec4899">✦</span>6. Base de Conhecimento</button>
+    <p>Para aprovar</p>
+    <button data-tela="analise"><span class="ic" style="background:#f59e0b">✓</span>7. Decisões e fases</button>
+  </nav>
+
+  <main>
+    <div class="top"><div><strong>Wagner Antunes</strong> <small>· Super admin</small></div><small>Mockup para aprovação · 29/10/2026</small></div>
+    <div class="wrap">
+
+<!-- ============ 1. NÚMEROS ============ -->
+<section class="tela on" id="numeros">
+  <h1>WhatsApp OpenWA › Números</h1>
+  <p class="sub">Cada número é uma sessão no OpenWA (um celular pareado por QR). <b>O número é do projeto</b>, em nome da empresa contratante (o cliente do projeto). Um projeto pode ter vários números; um número nunca atende dois projetos.</p>
+
+  <div class="card">
+    <div class="row"><div><h2>Números conectados</h2><p class="desc" style="margin:0">Atualiza sozinho a cada 30 s. O status vem do OpenWA.</p></div><span class="sp"></span>
+      <select aria-label="Filtrar por projeto"><option>Todos os projetos</option><option>Residencial Alto da Serra</option><option>Torre Norte</option></select>
+      <button class="btn pri" onclick="document.getElementById('dlgNumero').showModal()">+ Conectar número</button></div>
+    <div class="tw" style="margin-top:14px"><table>
+      <thead><tr><th>Nome no OpenWA</th><th>Número</th><th>Projeto</th><th>Titular (empresa contratante)</th><th>Status</th><th>Grupos</th><th>Último sinal</th><th></th></tr></thead>
+      <tbody>
+        <tr><td><strong>wsa-sistemas</strong> <span class="pill ro">Demonstração</span></td><td class="mono">+55 21 99477-1524</td><td>Demonstração WSA</td><td>WSA Sistemas</td><td><span class="pill ok"><span class="dot" style="background:var(--dot-sim)"></span>Conectado</span></td><td>3</td><td class="muted">há 12 s</td><td><button class="btn sm">Grupos</button></td></tr>
+        <tr><td><strong>alto-da-serra-obra</strong></td><td class="mono">+55 21 98100-3321</td><td>Residencial Alto da Serra</td><td>Construtora Serra Azul Ltda.</td><td><span class="pill ok"><span class="dot" style="background:var(--dot-sim)"></span>Conectado</span></td><td>4</td><td class="muted">há 20 s</td><td><button class="btn sm">Grupos</button></td></tr>
+        <tr><td><strong>torre-norte-obra</strong></td><td class="mono">+55 21 98811-2040</td><td>Torre Norte</td><td>Incorporadora Norte S.A.</td><td><span class="pill ok"><span class="dot" style="background:var(--dot-sim)"></span>Conectado</span></td><td>2</td><td class="muted">há 40 s</td><td><button class="btn sm">Grupos</button></td></tr>
+        <tr><td><strong>torre-norte-cliente</strong></td><td class="mono">+55 21 97700-1188</td><td>Torre Norte</td><td>Incorporadora Norte S.A.</td><td><span class="pill al"><span class="dot" style="background:var(--dot-pausa)"></span>Aguardando QR</span></td><td>0</td><td class="muted">—</td><td><button class="btn sm pri" onclick="document.getElementById('dlgNumero').showModal()">Ler QR</button></td></tr>
+      </tbody></table></div>
+    <p class="nota"><b>Número de demonstração:</b> o <code>wsa-sistemas</code> (+55 21 99477-1524) é da WSA Sistemas e fica no projeto <b>Demonstração WSA</b>, com a WSA como empresa contratante. Ele já está pronto no OpenWA e entra por “Conectar número” → “Usar sessão existente”, sem QR. Cada projeto real ganha um número próprio.</p>
+  </div>
+</section>
+
+<dialog id="dlgNumero">
+  <div class="dh">Conectar número</div>
+  <div class="db">
+    <div class="seg" role="group"><button aria-pressed="true">Nova sessão (QR)</button><button aria-pressed="false">Usar sessão existente</button></div>
+    <label>Projeto <select><option>Torre Norte</option><option>Residencial Alto da Serra</option></select></label>
+    <label>Titular (empresa contratante do projeto) <input value="Incorporadora Norte S.A." readonly></label>
+    <label>Nome da sessão no OpenWA <input value="torre-norte-cliente"></label>
+    <div style="text-align:center"><div class="qr" role="img" aria-label="QR Code de exemplo"></div>
+      <small class="muted">No celular: WhatsApp › Aparelhos conectados › Conectar aparelho. O QR se renova sozinho.</small></div>
+  </div>
+  <div class="df"><button class="btn" onclick="this.closest('dialog').close()">Fechar</button></div>
+</dialog>
+
+<!-- ============ 2. GRUPOS ============ -->
+<section class="tela" id="grupos">
+  <h1>WhatsApp OpenWA › Grupos e equipes</h1>
+  <p class="sub">Todo grupo do WhatsApp fica preso a um número, uma equipe e um projeto. É isso que impede as mensagens de se misturarem.</p>
+
+  <div class="card">
+    <h2>Como a mensagem chega no lugar certo</h2>
+    <div class="hier" style="margin-top:12px">
+      <div><strong>Projeto</strong><span>dono do número, em nome da empresa contratante</span></div>
+      <div><strong>Número</strong><span>sessão do OpenWA do projeto</span></div>
+      <div><strong>Grupo do WhatsApp</strong><span>id único <code>…@g.us</code>; um grupo, um vínculo</span></div>
+      <div><strong>Equipe</strong><span>quem atende o grupo; pode estar em vários projetos</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="row"><h2>Grupos vinculados</h2><span class="sp"></span>
+      <select aria-label="Filtrar por número"><option>Todos os números</option><option>wsa-sistemas</option><option>suporte-cliente</option></select>
+      <select aria-label="Filtrar por projeto"><option>Todos os projetos</option><option>Residencial Alto da Serra</option><option>Torre Norte</option></select>
+      <button class="btn pri" onclick="document.getElementById('dlgGrupo').showModal()">+ Vincular grupo</button></div>
+    <div class="tw" style="margin-top:14px"><table>
+      <thead><tr><th>Grupo do WhatsApp</th><th>Número</th><th>Equipe</th><th>Projeto</th><th>Membros</th><th>Evidência auto</th><th>OS auto</th><th>Situação</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Alto da Serra · Elétrica</strong></td><td class="mono">99477-1524</td><td>Elétrica</td><td>Residencial Alto da Serra</td><td>12</td><td>Sim</td><td>Sim</td><td><span class="pill ok">Ativo</span></td></tr>
+        <tr><td><strong>Alto da Serra · Hidráulica</strong></td><td class="mono">99477-1524</td><td>Hidráulica</td><td>Residencial Alto da Serra</td><td>9</td><td>Sim</td><td>Não</td><td><span class="pill ok">Ativo</span></td></tr>
+        <tr><td><strong>Alto da Serra · Fachada</strong></td><td class="mono">99477-1524</td><td>Pintura</td><td>Residencial Alto da Serra</td><td>6</td><td>Sim</td><td>Não</td><td><span class="pill ro">Em Anotações da equipe</span></td></tr>
+        <tr><td><strong>Torre Norte · Acabamento</strong></td><td class="mono">98811-2040</td><td>Acabamento</td><td>Torre Norte</td><td>15</td><td>Sim</td><td>Sim</td><td><span class="pill ok">Ativo</span></td></tr>
+        <tr><td><strong>Torre Norte · Elétrica</strong></td><td class="mono">98811-2040</td><td>Elétrica</td><td>Torre Norte</td><td>7</td><td>Não</td><td>Não</td><td><span class="pill ok">Ativo</span></td></tr>
+      </tbody></table></div>
+    <p class="nota"><b>Mesma equipe em dois projetos:</b> a “Elétrica” atende o Alto da Serra e a Torre Norte, mas cada projeto tem o seu próprio grupo. A mensagem do grupo “Torre Norte · Elétrica” só aparece na Torre Norte.</p>
+  </div>
+</section>
+
+<dialog id="dlgGrupo">
+  <div class="dh">Vincular grupo</div>
+  <div class="db">
+    <label>1. Projeto <select><option>Residencial Alto da Serra</option><option>Torre Norte</option></select></label>
+    <label>2. Número (só os do projeto) <select><option>wsa-sistemas · 99477-1524</option></select></label>
+    <label>3. Grupo do WhatsApp (lido do número) <select><option>Alto da Serra · Pintura (8 membros)</option><option>Alto da Serra · Esquadrias (5 membros)</option><option disabled>Alto da Serra · Elétrica (já vinculado)</option></select></label>
+    <label>4. Equipe (só as equipes deste projeto) <select><option>Pintura</option><option>Elétrica</option><option>Hidráulica</option></select></label>
+    <div class="row"><label style="display:flex;gap:6px;align-items:center;font-weight:500"><input type="checkbox" checked> Criar evidência automática</label>
+      <label style="display:flex;gap:6px;align-items:center;font-weight:500"><input type="checkbox"> Abrir OS automática</label></div>
+    <small class="muted">Grupo que já tem vínculo aparece desabilitado: um grupo não pode estar em dois projetos.</small>
+  </div>
+  <div class="df"><button class="btn" onclick="this.closest('dialog').close()">Cancelar</button><button class="btn pri" onclick="this.closest('dialog').close()">Vincular</button></div>
+</dialog>
+
+<!-- ============ 3. MONITOR ============ -->
+<section class="tela" id="monitor">
+  <h1>Residencial Alto da Serra</h1>
+  <p class="sub">Projeto · Execução</p>
+  <div class="abas" role="tablist"><button>Visão geral</button><button>Cronograma</button><button>OS</button><button aria-selected="true">Conversas</button><button onclick="ir('anotacoes')">Anotações da equipe</button><button>Atas</button><button>Documentos</button></div>
+
+  <div class="row" style="margin-bottom:14px">
+    <div class="seg" role="group" aria-label="Modo da aba Conversas"><button aria-pressed="false" onclick="ir('chat')">Conversas</button><button aria-pressed="true">Monitor</button></div>
+    <span class="sp"></span>
+    <div class="seg" role="group" aria-label="Filtro" id="fMon">
+      <button aria-pressed="true" data-f="todas">Todas</button><button aria-pressed="false" data-f="online">Online agora</button><button aria-pressed="false" data-f="arq">Foram para Anotações</button></div>
+    <select aria-label="Equipe"><option>Todas as equipes</option><option>Elétrica</option><option>Hidráulica</option><option>Pintura</option></select>
+    <select aria-label="Número"><option>Todos os números</option><option>99477-1524</option></select>
+  </div>
+  <p class="nota" style="margin:0 0 14px"><b>Quem vê o Monitor:</b> só o gerente do projeto, o diretor e o super admin. Analista, usuário-chave e prestador veem a aba Conversas sem o botão “Monitor”.</p>
+
+  <div class="kpis">
+    <div class="kpi"><b>2</b><span>Online agora (mensagem nos últimos 15 min)</span></div>
+    <div class="kpi"><b>7</b><span>Mensagens não lidas</span></div>
+    <div class="kpi"><b>1</b><span>Esperando resposta há mais de 30 min</span></div>
+    <div class="kpi"><b>2</b><span>Foram para Anotações da equipe (30 dias sem mensagem)</span></div>
+  </div>
+
+  <div id="monLista"></div>
+</section>
+
+<!-- ============ 4. CHAT ============ -->
+<section class="tela" id="chat">
+  <h1>Residencial Alto da Serra</h1>
+  <p class="sub">Projeto · Execução</p>
+  <div class="abas" role="tablist"><button>Visão geral</button><button>Cronograma</button><button>OS</button><button aria-selected="true">Conversas</button><button onclick="ir('anotacoes')">Anotações da equipe</button><button>Atas</button><button>Documentos</button></div>
+  <div class="row" style="margin-bottom:14px">
+    <div class="seg" role="group"><button aria-pressed="true">Conversas</button><button aria-pressed="false" onclick="ir('monitor')">Monitor</button></div>
+    <span class="sp"></span><small class="muted">Clique numa conversa do Monitor e ela abre aqui</small>
+  </div>
+  <div class="wa">
+    <div class="wa-l">
+      <div class="hd"><input placeholder="Pesquisar grupo ou mensagem" aria-label="Pesquisar">
+        <div class="tabs" id="fChat"><button aria-pressed="true" data-f="todas">Tudo</button><button aria-pressed="false" data-f="online">Online</button><button aria-pressed="false" data-f="nl">Não lidas</button></div></div>
+      <div class="wa-list" id="waLista"></div>
+    </div>
+    <div class="wa-r" id="waConv"><div class="vazio">Escolha uma conversa</div></div>
+  </div>
+</section>
+
+<!-- ============ 5. ANOTAÇÕES DA EQUIPE ============ -->
+<section class="tela" id="anotacoes">
+  <h1>Residencial Alto da Serra</h1>
+  <p class="sub">Projeto · Execução</p>
+  <div class="abas" role="tablist"><button>Visão geral</button><button>Cronograma</button><button>OS</button><button onclick="ir('chat')">Conversas</button><button aria-selected="true">Anotações da equipe</button><button>Atas</button><button>Documentos</button></div>
+  <p class="sub" style="margin-top:-4px">Grupos que ficaram 30 dias sem mensagem saem de Conversas e ficam guardados aqui, separados por equipe, só para leitura. <b>Nada daqui aparece nem é citado na Ordem de Serviço.</b></p>
+
+  <div class="row" style="margin-bottom:14px">
+    <input placeholder="Buscar nas anotações" aria-label="Buscar nas anotações" style="flex:1;min-width:200px">
+    <select aria-label="Equipe"><option>Todas as equipes</option><option>Pintura</option><option>Infra</option></select>
+    <select aria-label="Período"><option>Qualquer data</option><option>Últimos 90 dias</option><option>Este ano</option></select>
+  </div>
+
+  <div class="wa" style="height:560px">
+    <div class="wa-l">
+      <div class="hd"><strong style="color:var(--wa-text)">Anotações · 2 grupos</strong></div>
+      <div class="wa-list" id="anLista"></div>
+    </div>
+    <div class="wa-r" id="anConv"><div class="vazio">Escolha um grupo para ler as anotações</div></div>
+  </div>
+  <p class="nota"><b>Quem vê:</b> todos os membros da equipe do grupo veem as anotações dela; gerente, diretor e super admin veem as de todas as equipes do projeto.</p>
+  <p class="nota"><b>Se o grupo voltar a conversar</b>, ele sai de Anotações e volta para Conversas com todo o histórico. As marcas de OS e evidência (“OS 214”, “Evidência criada”) não aparecem nesta aba.</p>
+</section>
+
+
+<!-- ============ 6. BASE DE CONHECIMENTO ============ -->
+<section class="tela" id="base">
+  <h1>Base de Conhecimento</h1>
+  <p class="sub">Pergunte em português. A resposta é montada só com o que já foi registrado no sistema (OS concluídas, atas, documentos e anotações da equipe) e mostra de onde veio cada informação.</p>
+
+  <div class="row" style="margin-bottom:14px">
+    <select aria-label="Onde buscar"><option>Todos os meus projetos (3)</option><option>Residencial Alto da Serra</option><option>Torre Norte</option><option>Demonstração WSA</option></select>
+    <div class="seg" role="group" aria-label="Fontes">
+      <button aria-pressed="true">OS concluídas</button><button aria-pressed="true">Atas</button><button aria-pressed="true">Documentos</button><button aria-pressed="true">Anotações</button></div>
+    <span class="sp"></span><button class="btn sm">Minhas perguntas</button>
+  </div>
+
+  <div class="kb">
+    <div class="kb-chat">
+      <div class="kb-msgs">
+        <div class="kb-q">Como resolvemos infiltração no shaft hidráulico em obras anteriores? Preciso orientar a equipe hoje.</div>
+        <div class="kb-a">
+          <p>Encontrei <b>2 casos parecidos</b>, os dois resolvidos do mesmo jeito:</p>
+          <ol>
+            <li>Localizar o vazamento com teste de estanqueidade por prumada, fechando registro por registro <span class="cit-n">1</span>.</li>
+            <li>Trocar a conexão do ramal (o problema foi junta soldável mal feita em PVC 50 mm) e refazer a vedação do shaft com manta asfáltica <span class="cit-n">1</span> <span class="cit-n">2</span>.</li>
+            <li>Teste de 24 h com a prumada pressurizada antes de fechar o forro <span class="cit-n">2</span>.</li>
+          </ol>
+          <p>Material usado: conexões PVC 50 mm, adesivo plástico, manta asfáltica 3 mm <span class="cit-n">1</span>. Na ata da Torre Norte ficou decidido que o teste de 24 h passa a ser obrigatório <span class="cit-n">3</span>.</p>
+          <div class="kb-fb">Isso ajudou? <button class="btn sm">👍 Sim</button><button class="btn sm">👎 Não</button></div>
+        </div>
+        <div class="kb-q">E sobre impermeabilização de laje técnica?</div>
+        <div class="kb-a"><p>Não encontrei nada registrado sobre impermeabilização de laje técnica nos seus projetos. Se a equipe resolver isso agora, a OS concluída passa a responder essa pergunta.</p></div>
+      </div>
+      <div class="comp"><input placeholder="Pergunte sobre uma atividade, um problema ou uma implantação…" aria-label="Pergunta"><button class="btn sm pri">Perguntar</button></div>
+      <div class="kb-sug"><button class="btn sm">Como foi a implantação do quadro elétrico?</button><button class="btn sm">Quais materiais usamos na fachada?</button><button class="btn sm">O que ficou decidido sobre vistoria?</button></div>
+    </div>
+    <aside class="kb-src">
+      <h2 style="font-size:15px;margin:0 0 10px">Fontes desta resposta</h2>
+      <button class="src"><span class="cit-n">1</span><div><strong>OS 187 · Infiltração no shaft B</strong><small>Torre Norte · Hidráulica · aprovada em 12/09/2026</small><span>“…junta soldável do ramal 50 mm com falha; trocada a conexão e refeita a vedação com manta…”</span></div></button>
+      <button class="src"><span class="cit-n">2</span><div><strong>OS 203 · Vazamento prumada 2</strong><small>Residencial Alto da Serra · Hidráulica · aprovada em 03/10/2026</small><span>“…teste de 24 h com a prumada pressurizada antes de fechar o forro…”</span></div></button>
+      <button class="src"><span class="cit-n">3</span><div><strong>Ata 14 · Reunião de obra</strong><small>Torre Norte · aprovada em 20/09/2026</small><span>Decisão: “teste de estanqueidade de 24 h obrigatório antes de fechar forro”.</span></div></button>
+      <p class="muted" style="font-size:12.5px;margin:12px 0 0">Você só recebe resposta com o que já pode ver no sistema. Rascunhos não entram.</p>
+    </aside>
+  </div>
+</section>
+
+<!-- ============ 5. ANÁLISE ============ -->
+<section class="tela" id="analise">
+  <h1>Decisões e fases</h1>
+  <p class="sub">Decisões do Wagner em 29/10/2026. O mockup foi refeito com elas e aguarda o “pode implantar”.</p>
+
+  <div class="card"><h2>Decisões aprovadas</h2>
+    <div class="dec">
+      <div><strong>D1 · O número é do projeto, em nome da empresa contratante</strong><p><code>wa_sessions.project_id</code> continua obrigatório. O titular mostrado é o cliente do projeto (<code>projects.cliente_org_id</code>). Um projeto pode ter vários números; um número nunca atende dois projetos.</p></div>
+      <div><strong>D2 · Equipe pode estar em vários projetos</strong><p>Tabela nova <code>project_teams</code> (N:N). Ao vincular o grupo, só aparecem as equipes do projeto.</p></div>
+      <div><strong>D3 · Um grupo, um vínculo</strong><p>O grupo pertence a 1 projeto e 1 equipe e usa 1 número, que precisa ser do mesmo projeto. Mensagem nunca aparece em dois projetos.</p></div>
+      <div><strong>D4 · “Online agora” = mensagem nos últimos 15 min</strong><p>O motor atual não informa presença real do WhatsApp (o OpenWA responde 501).</p></div>
+      <div><strong>D5 · 30 dias sem mensagem → aba “Anotações da equipe”</strong><p>O grupo sai de Conversas e fica no projeto, por equipe, só leitura. Nada dessa aba aparece nem é citado na Ordem de Serviço, e as marcas de OS/evidência ficam escondidas. Se o grupo voltar a conversar, volta para Conversas.</p></div>
+      <div><strong>D6 · Monitor só para gerente do projeto, diretor e super admin</strong><p>Permissão nova <code>conversas_monitor: ["diretor", "gerente"]</code> no front e na função do banco. Os demais papéis não veem o botão.</p></div>
+      <div><strong>D7 · Número de demonstração</strong><p><code>wsa-sistemas</code> (+55 21 99477-1524) é da WSA Sistemas e fica no projeto <b>Demonstração WSA</b>, com a WSA como contratante. Projeto real ganha número próprio.</p></div>
+      <div><strong>D8 · Anotações: todos da equipe veem</strong><p>Membro da equipe do grupo vê as anotações dela; gerente, diretor e super admin veem todas do projeto.</p></div>
+    </div></div>
+
+  <div class="card"><h2>Base de Conhecimento: decisões para aprovar</h2>
+    <p class="desc">Hoje o imobproj não usa IA nem busca semântica. As recomendações abaixo seguem o que já roda no Portal Atendimento (Gemini + fila no banco).</p>
+    <div class="dec">
+      <div><strong>K1 · O que entra na base</strong><p>Recomendo: OS <b>aprovadas</b> (título, descrição, materiais, comentário do aceite), atas aprovadas/publicadas (pauta e decisões), documentos aprovados ou vivos (conteúdo digitado) e anotações da equipe. Rascunho e OS recusada ficam fora. PDF anexo fica para depois.</p></div>
+      <div><strong>K2 · Cada um só consulta o que já pode ver</strong><p>Recomendo: a busca respeita as permissões. Membro vê os projetos dele (equipe em vários projetos = consulta todos esses); prestador só as próprias OS; super admin tudo. Dado de um cliente não aparece para quem não está no projeto dele.</p></div>
+      <div><strong>K3 · Motor</strong><p>Recomendo Gemini (padrão da casa) para entender a pergunta e escrever a resposta, e busca semântica com <code>pgvector</code> no Supabase. Se a extensão não puder ser ligada no banco compartilhado, começa com busca por texto em português e passa para a semântica depois. Chave da IA no cofre (Vault).</p></div>
+      <div><strong>K4 · Resposta só com fonte</strong><p>Toda frase aponta para a OS, ata ou documento de origem. Sem fonte, responde “não encontrei”. Nunca inventa. Telefone e CPF são mascarados antes de ir para a IA.</p></div>
+      <div><strong>K5 · Atualiza sozinha</strong><p>OS aprovada, ata publicada, documento aprovado ou grupo que foi para Anotações entram numa fila e são indexados em até 1 minuto.</p></div>
+      <div><strong>K6 · Menu e histórico</strong><p>Menu “Base de Conhecimento” no grupo principal, para todos os perfis com acesso ao sistema. Cada usuário vê as próprias perguntas e marca 👍/👎 para medir a qualidade.</p></div>
+    </div></div>
+
+  <div class="card"><h2>Limites que continuam valendo</h2>
+    <ul>
+      <li>Arquivar é do portal: o WhatsApp Web não avisa quando alguém arquiva no celular.</li>
+      <li>Cada número é um Chromium no servidor do OpenWA (cerca de 300 a 500 MB).</li>
+      <li>API não oficial: número novo deve “aquecer” antes de entrar em muitos grupos.</li>
+    </ul></div>
+
+  <div class="card"><h2>Fases</h2>
+    <ul>
+      <li>F1 · Banco: <code>project_teams</code>, <code>wa_groups.team_id</code> e <code>anotacao_desde</code>, regra “número do mesmo projeto”, rotina diária dos 30 dias, funções do Monitor e das Anotações.</li>
+      <li>F2 · Números: conectar por QR ou usar sessão existente, titular = empresa contratante; registrar <code>wsa-sistemas</code>.</li>
+      <li>F3 · Grupos e equipes: vincular grupo lido do número; equipes do projeto.</li>
+      <li>F4 · Monitor dentro de Conversas (só gerente, diretor e super admin).</li>
+      <li>F5 · Aba Anotações da equipe, sem nada de OS.</li>
+      <li>F6 · Teste ponta a ponta: 2 projetos, 2 números, grupos sem mistura.</li>
+      <li>F7 · Base de Conhecimento, banco e indexação: tabela de trechos, fila, Edge Function de indexação, busca que respeita permissão.</li>
+      <li>F8 · Base de Conhecimento, tela de chat com fontes, histórico e 👍/👎; teste com perguntas reais.</li>
+    </ul></div>
+</section>
+
+    </div>
+  </main>
+</div>
+
+<script>
+const CONVERSAS = [
+  { id: 1, nome: "Alto da Serra · Elétrica", equipe: "Elétrica", num: "99477-1524", cor: "#3b82f6", ini: "EL", estado: "online", quando: "agora", nl: 4, ult: "<b>Carlos:</b> Quadro do 3º andar energizado, segue a foto 📷", espera: false },
+  { id: 2, nome: "Alto da Serra · Hidráulica", equipe: "Hidráulica", num: "99477-1524", cor: "#14b8a6", ini: "HI", estado: "online", quando: "há 6 min", nl: 2, ult: "<b>Rafael:</b> Vazamento no shaft B, preciso de OS", espera: true },
+  { id: 3, nome: "Alto da Serra · Pintura", equipe: "Pintura", num: "99477-1524", cor: "#ec4899", ini: "PI", estado: "recente", quando: "ontem", nl: 1, ult: "<b>Você:</b> Amanhã a tinta chega às 8h", espera: false },
+  { id: 4, nome: "Alto da Serra · Fachada", equipe: "Pintura", num: "99477-1524", cor: "#8b5cf6", ini: "FA", estado: "arq", quando: "02/09", nl: 0, ult: "<b>Marcos:</b> Fachada liberada, encerrando o grupo", espera: false },
+  { id: 5, nome: "Alto da Serra · Terraplenagem", equipe: "Infra", num: "99477-1524", cor: "#94a3b8", ini: "TE", estado: "arq", quando: "14/08", nl: 0, ult: "<b>Você:</b> Etapa concluída, obrigado a todos", espera: false },
+];
+const MSGS = {
+  1: [["dia","Hoje"],["in","Carlos (Elétrica)","Bom dia! Começando o quadro do 3º andar","09:02"],["out","Você","Ok, mandem foto quando energizar","09:05"],["in","Carlos (Elétrica)","Quadro do 3º andar energizado, segue a foto 📷","11:58","Evidência criada · OS 214"]],
+  2: [["dia","Hoje"],["in","Rafael (Hidráulica)","Vazamento no shaft B, preciso de OS","11:52"],["in","Rafael (Hidráulica)","Está pingando na laje do 2º","11:53"]],
+  3: [["dia","Ontem"],["in","Júlia (Pintura)","Falta tinta para o bloco C","16:10"],["out","Você","Amanhã a tinta chega às 8h","16:22",null,"Falta tinta para o bloco C"]],
+  4: [["dia","01/09/2026"],["in","Marcos (Pintura)","Última demão da fachada leste concluída, fotos anexas 📷","15:12","Evidência criada · OS 198"],["out","Você","Recebido, vou agendar a vistoria","15:30"],["dia","02/09/2026"],["in","Marcos (Pintura)","Fachada liberada, encerrando o grupo","17:40"]],
+  5: [["dia","14/08/2026"],["out","Você","Etapa concluída, obrigado a todos","10:00"]],
+};
+let filtroMon = "todas", filtroChat = "todas", atual = null;
+
+function ir(tela) {
+  document.querySelectorAll(".tela").forEach(s => s.classList.toggle("on", s.id === tela));
+  document.querySelectorAll(".side button").forEach(b => b.dataset.tela === tela ? b.setAttribute("aria-current", "page") : b.removeAttribute("aria-current"));
+  window.scrollTo(0, 0);
+}
+document.querySelectorAll(".side button").forEach(b => b.addEventListener("click", () => ir(b.dataset.tela)));
+
+function pill(c) {
+  if (c.estado === "online") return '<span class="pill ok"><span class="dot" style="background:var(--dot-sim)"></span>Online · ' + c.quando + '</span>';
+  if (c.estado === "arq") return '<span class="pill ro">Em Anotações · desde ' + c.quando + '</span>';
+  return '<span class="pill in">Última: ' + c.quando + '</span>';
+}
+function cartao(c) {
+  return '<button class="conv' + (c.estado === "arq" ? " arq" : "") + '" onclick="' + (c.estado === "arq" ? "abrirAnotacao" : "abrir") + '(' + c.id + ')">' +
+    '<div class="ch"><div class="av" style="background:' + c.cor + '">' + c.ini + '</div><div class="t"><strong>' + c.nome + '</strong><small>Equipe ' + c.equipe + ' · nº ' + c.num + '</small></div>' +
+    (c.nl ? '<span class="badge">' + c.nl + '</span>' : '') + '</div>' +
+    '<div class="prev">' + c.ult + '</div>' +
+    '<div class="meta">' + pill(c) + (c.espera ? '<span class="pill pe">Esperando resposta</span>' : '') + '</div></button>';
+}
+function renderMon() {
+  const grupos = [["online","Online agora"],["recente","Recentes"],["arq","Foram para Anotações da equipe"]];
+  let html = "";
+  for (const [k, t] of grupos) {
+    if (filtroMon === "online" && k !== "online") continue;
+    if (filtroMon === "arq" && k !== "arq") continue;
+    const l = CONVERSAS.filter(c => c.estado === k);
+    if (!l.length) continue;
+    const cor = k === "online" ? "var(--dot-sim)" : k === "arq" ? "var(--dot-off)" : "var(--in)";
+    html += '<div class="grp-t"><span class="dot" style="background:' + cor + '"></span>' + t + ' · ' + l.length + '</div><div class="mon">' + l.map(cartao).join("") + '</div>';
+  }
+  document.getElementById("monLista").innerHTML = html;
+}
+function itemLista(c, fn) {
+  return '<button class="wa-it" aria-current="' + (c.id === atual) + '" onclick="' + fn + '(' + c.id + ')"><div class="av" style="background:' + c.cor + '">' + c.ini + '</div><div class="t">' +
+    '<div class="l1"><strong>' + c.nome + '</strong><small>' + c.quando + '</small></div>' +
+    '<div class="l2"><span>' + (fn === "abrir" ? c.ult.replace(/<[^>]+>/g, "") : "Equipe " + c.equipe) + '</span>' + (c.nl ? '<span class="badge">' + c.nl + '</span>' : (c.estado === "online" ? '<span class="dot" style="background:var(--dot-sim);margin-top:5px"></span>' : '')) + '</div></div></button>';
+}
+function renderLista() {
+  const l = CONVERSAS.filter(c => c.estado !== "arq" && (filtroChat === "todas" || (filtroChat === "online" ? c.estado === "online" : c.nl > 0)));
+  document.getElementById("waLista").innerHTML = l.map(c => itemLista(c, "abrir")).join("") || '<div class="vazio" style="height:auto;padding:30px">Nenhuma conversa neste filtro</div>';
+  document.getElementById("anLista").innerHTML = CONVERSAS.filter(c => c.estado === "arq").map(c => itemLista(c, "abrirAnotacao")).join("");
+}
+function mensagens(c, comOS) {
+  return MSGS[c.id].map(m => {
+    if (m[0] === "dia") return '<div class="dia">' + m[1] + '</div>';
+    return '<div class="b ' + m[0] + '">' + (m[5] ? '<div class="cit">' + m[5] + '</div>' : '') + (m[0] === "in" ? '<span class="au" style="color:' + c.cor + '">' + m[1] + '</span>' : '') +
+      m[2] + (m[4] && comOS ? '<br><span class="tag">⚑ ' + m[4] + '</span>' : '') + '<span class="hr">' + m[3] + (m[0] === "out" ? ' ✓✓' : '') + '</span></div>';
+  }).join("");
+}
+function cabecalho(c) {
+  return '<div class="hd"><div class="av" style="background:' + c.cor + '">' + c.ini + '</div><div style="flex:1;min-width:0"><strong>' + c.nome + '</strong><small>Equipe ' + c.equipe + ' · Residencial Alto da Serra · nº ' + c.num + '</small></div>' + pill(c) + '</div>';
+}
+function abrir(id) {
+  atual = id;
+  const c = CONVERSAS.find(x => x.id === id);
+  document.getElementById("waConv").innerHTML = cabecalho(c) + '<div class="msgs">' + mensagens(c, true) + '</div>' +
+    '<div class="comp"><button class="btn sm" aria-label="Anexar">📎</button><input placeholder="Mensagem para o grupo (sai pelo nº ' + c.num + ')" aria-label="Mensagem"><button class="btn sm pri">Enviar</button></div>';
+  renderLista();
+  ir("chat");
+}
+function abrirAnotacao(id) {
+  atual = id;
+  const c = CONVERSAS.find(x => x.id === id);
+  document.getElementById("anConv").innerHTML = cabecalho(c) + '<div class="msgs">' + mensagens(c, false) + '</div>' +
+    '<div class="ro-bar">Anotação da equipe: só leitura. Se o grupo mandar mensagem nova, ele volta para Conversas.</div>';
+  renderLista();
+  ir("anotacoes");
+}
+function seg(idGrupo, cb) {
+  document.querySelectorAll("#" + idGrupo + " button").forEach(b => b.addEventListener("click", () => {
+    document.querySelectorAll("#" + idGrupo + " button").forEach(x => x.setAttribute("aria-pressed", x === b));
+    cb(b.dataset.f);
+  }));
+}
+seg("fMon", f => { filtroMon = f; renderMon(); });
+seg("fChat", f => { filtroChat = f; renderLista(); });
+renderMon(); renderLista();
+</script>
+</body>
+</html>
