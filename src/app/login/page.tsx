@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import { EntrarComoDemo } from "@/components/demo/entrar-como";
 import { LoginLayout } from "@/components/login/login-layout";
+import { MODO_DEMO } from "@/lib/demo";
 import { supabaseConfigurado } from "@/lib/supabase/env";
 import { FormEntrada } from "./form-entrada";
 
@@ -16,6 +18,7 @@ export default async function LoginPage({
 
   return (
     <LoginLayout>
+      {MODO_DEMO && <EntrarComoDemo destino={destino} />}
       <FormEntrada
         destino={destino}
         erroLink={erro === "link"}

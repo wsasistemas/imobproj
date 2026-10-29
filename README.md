@@ -111,6 +111,55 @@ O schema precisa estar em **Exposed schemas** da API (já feito; a lista fica em
 
 > Nunca faça commit do `.env.local` nem use a `SUPABASE_SERVICE_ROLE_KEY` em código de navegador.
 
+## Versão demo
+
+A demonstração é o **mesmo código**, publicado num **projeto Vercel separado** e ligado a um **projeto Supabase
+só dela**. O banco de produção (`ikvjaowvpvxojvcfwnct`) nunca recebe a demo: o script recusa esse projeto.
+
+No modo demo (`NEXT_PUBLIC_MODO=demo`):
+- a tela de entrada mostra **Entrar como**, com um botão por perfil fictício: Super admin, Gerente, Técnico/analista, Atendente e Usuário-chave;
+- a área logada tem a faixa **Demonstração**, com **Ver como** (troca de perfil sem senha) e, para o super admin, **Restaurar dados da demo**, que apaga tudo e recria os dados fictícios.
+
+Sem essa variável, nada disso aparece, e as ações da demo recusam a chamada.
+
+Arquivos:
+- `supabase/demo/seed-demo.sql`: os dados fictícios. É gerado por `node scripts/gerar-seed-demo.mjs` a partir do `supabase/seed.sql` e de `supabase/demo/extra-demo.sql`. Rode o gerador de novo sempre que o seed mudar.
+- `supabase/demo/funcoes-demo.sql`: `imobproj.demo_restaurar()`. Fica fora de `supabase/migrations` para o `migrar-nuvem.sh` nunca levá-lo à produção.
+- `scripts/publicar-demo.sh`: aplica as migrations, a Central de Acessos (réplica), as funções da demo e os dados.
+
+### Passo a passo (uma vez)
+
+1. **Crie o projeto Supabase da demo** em https://supabase.com/dashboard (ex.: `imobproj-demo`, região São Paulo).
+   Anote o *Project ref* e a senha do banco.
+2. **Publique o banco da demo** no Git Bash, na raiz do repositório. Escolha uma senha para os usuários fictícios (8 ou mais caracteres, sem aspas e sem `$`).
+   Primeiro, confira o que vai ser aplicado:
+   ```bash
+   bash scripts/publicar-demo.sh --project-ref <ref-da-demo> --listar
+   ```
+   Depois, publique:
+   ```bash
+   DEMO_SENHA='<senha-da-demo>' DEMO_PORTAL_URL='https://imobproj-demo.vercel.app' \
+     bash scripts/publicar-demo.sh --project-ref <ref-da-demo>
+   ```
+   A outra opção é passar a conexão direta, `SUPABASE_DEMO_DB_URL="postgresql://postgres:<senha>@db.<ref>.supabase.co:5432/postgres"`, no lugar de `--project-ref`.
+3. **Exponha o schema** `imobproj` no projeto da demo, em Settings → API → Exposed schemas.
+   Em Authentication → URL Configuration, coloque o endereço da demo como Site URL.
+4. **Crie o projeto Vercel** `imobproj-demo`: em https://vercel.com/new, importe o **mesmo repositório**.
+   Cadastre as variáveis:
+
+   | Variável | Valor |
+   |---|---|
+   | `NEXT_PUBLIC_MODO` | `demo` |
+   | `NEXT_PUBLIC_SUPABASE_URL` | URL do Supabase da demo |
+   | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | chave anon do Supabase da demo |
+   | `SUPABASE_SERVICE_ROLE_KEY` | chave service_role do Supabase da demo |
+   | `DEMO_SENHA` | a mesma senha do passo 2 (só servidor, **sem** `NEXT_PUBLIC_`) |
+
+   Faça o deploy. Os usuários fictícios têm e-mail `@demo.imobproj.com.br`, e quem entra pela demo nunca precisa digitar a senha.
+
+Para atualizar a demo depois de novas migrations, rode de novo o passo 2. Ele aplica só as migrations pendentes e recria os dados.
+Para só recriar os dados, use o botão **Restaurar dados da demo**.
+
 ## Estrutura
 
 ```

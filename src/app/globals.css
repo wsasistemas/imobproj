@@ -665,3 +665,88 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Versão de demonstração (Fase 7): faixa da área logada e "Entrar como" no login.
+   Só aparecem com NEXT_PUBLIC_MODO=demo (src/lib/demo.ts).
+   --------------------------------------------------------------------------- */
+.demo-faixa {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 6px 16px;
+  background: var(--abobora-soft);
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  font-size: 12.5px;
+}
+.demo-faixa__selo,
+.demo-entrar__selo {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border-radius: 999px;
+  padding: 2px 10px;
+  background: var(--abobora);
+  color: #3b2300;
+  font-size: 11.5px;
+  font-weight: 700;
+}
+.demo-faixa__texto { color: var(--muted-text); }
+.demo-faixa__acoes { margin-left: auto; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.demo-faixa__rotulo { font-weight: 600; }
+.demo-faixa__select,
+.demo-faixa__botao {
+  min-height: 30px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  padding: 3px 10px;
+  font: inherit;
+  font-size: 12.5px;
+}
+.demo-faixa__select { max-width: 100%; }
+.demo-faixa__botao { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; cursor: pointer; }
+.demo-faixa__botao:hover:not(:disabled) { border-color: var(--abobora-dark); }
+.demo-faixa__botao--perigo { border-color: var(--danger); color: var(--danger); }
+.demo-faixa__select:focus-visible,
+.demo-faixa__botao:focus-visible,
+.demo-entrar__botao:focus-visible { outline: 2px solid var(--abobora); outline-offset: 2px; }
+.demo-faixa :disabled { opacity: 0.6; cursor: wait; }
+
+.demo-entrar {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 28px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--abobora-soft);
+}
+.demo-entrar__selo { width: max-content; }
+.demo-entrar__titulo { margin: 2px 0 0; font-size: 18px; font-weight: 700; color: var(--text); }
+.demo-entrar__texto { margin: 0; font-size: 13px; color: var(--muted-text); }
+.demo-entrar__erro { margin: 0; font-size: 13px; font-weight: 600; color: var(--danger); }
+.demo-entrar__lista { display: grid; gap: 6px; margin: 4px 0 0; padding: 0; list-style: none; }
+.demo-entrar__botao {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 48px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+.demo-entrar__botao:hover:not(:disabled) { border-color: var(--primary); }
+.demo-entrar__botao:disabled { opacity: 0.6; cursor: wait; }
+.demo-entrar__botao span { display: grid; min-width: 0; }
+.demo-entrar__botao b { font-size: 14px; }
+.demo-entrar__botao small { font-size: 12px; color: var(--muted-text); }

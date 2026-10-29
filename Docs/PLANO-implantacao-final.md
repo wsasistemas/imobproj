@@ -80,9 +80,9 @@ Pendências da Fase 2 que dependem do Wagner:
 
 ## Fase 7 — Versão demo com dados fictícios
 
-- [ ] Modo demo (`NEXT_PUBLIC_MODO=demo`) num projeto Vercel à parte, ligado a um banco de demonstração (Supabase local publicado ou projeto próprio).
-- [ ] Seed de demonstração com clientes, pessoas, projetos, OS, atas e conversas inventados.
-- [ ] Faixa "Demonstração", "Ver como" (troca de perfil sem senha) e "Restaurar dados da demo".
+- [x] Modo demo (`NEXT_PUBLIC_MODO=demo`) num projeto Vercel à parte, ligado a um banco de demonstração (Supabase local publicado ou projeto próprio). *(código, `scripts/publicar-demo.sh` e passo a passo no README; o projeto Supabase e o projeto Vercel da demo são criados pelo Wagner)*
+- [x] Seed de demonstração com clientes, pessoas, projetos, OS, atas e conversas inventados. *(`supabase/demo/seed-demo.sql`, gerado por `scripts/gerar-seed-demo.mjs`)*
+- [x] Faixa "Demonstração", "Ver como" (troca de perfil sem senha) e "Restaurar dados da demo". *(mais "Entrar como" na tela de entrada; `imobproj.demo_restaurar()` só no banco da demo)*
 
 ## Fase 8 — Centro de Treinamento
 

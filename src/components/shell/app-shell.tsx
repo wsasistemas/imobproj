@@ -6,6 +6,8 @@ import type { AcessoMenu } from "@/config/menu";
 import type { UsuarioLogado } from "@/lib/sessao";
 import { COOKIE_MENU_RECOLHIDO } from "@/lib/tema";
 import { cn } from "@/lib/utils";
+import { FaixaDemo } from "@/components/demo/faixa-demo";
+import { MODO_DEMO } from "@/lib/demo";
 import { Cabecalho } from "./cabecalho";
 import { MenuLateral } from "./menu-lateral";
 
@@ -51,6 +53,7 @@ export function AppShell({
       >
         Pular para o conteúdo
       </a>
+      {MODO_DEMO && <FaixaDemo email={usuario.email} superAdmin={Boolean(acesso?.superAdmin)} />}
       <Cabecalho usuario={usuario} dataExtenso={dataExtenso} onMenu={alternarMenu} />
 
       <div className="flex min-h-0 flex-1">
