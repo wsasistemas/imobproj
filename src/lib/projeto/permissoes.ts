@@ -25,6 +25,8 @@ export const PERMISSOES = {
   ata_ciencia: ["diretor", "usuario_chave"],
   whatsapp_grupos_gerir: ["gerente"],
   whatsapp_responder: ["diretor", "gerente", "usuario_chave", "analista"],
+  // Monitor de conversas do projeto (D6, 29/10/2026); a função conversas_monitor do banco aplica a mesma regra.
+  conversas_monitor: ["diretor", "gerente"],
   openwa_configurar: [],
   configuracoes_gerir: [],
   auditoria_ver: ["diretor", "gerente"],

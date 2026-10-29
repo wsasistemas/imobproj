@@ -3,12 +3,13 @@
 import "./conversas.css";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Lock, MessagesSquare } from "lucide-react";
+import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { IconeMenu } from "@/components/shell/icone-menu";
 import { Card, CardContent } from "@/components/ui/card";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
-import { veProjetoInteiro } from "@/lib/projeto/permissoes";
+import { pode, veProjetoInteiro } from "@/lib/projeto/permissoes";
 import type { Papel } from "@/lib/projeto/tipos";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
@@ -16,6 +17,7 @@ import { Chat } from "./chat";
 import { buscarGrupos, buscarParticipantes, buscarPessoas, buscarResumo, chavesConversas } from "./dados";
 import { ALTURA_CENTRAL, EsqueletoConversas } from "./esqueleto";
 import { ListaGrupos, type FiltroConversas } from "./lista-grupos";
+import { MonitorConversas } from "./monitor-conversas";
 import { PainelGrupo } from "./painel-grupo";
 import { SeloOpenWa } from "./selo-openwa";
 
@@ -47,6 +49,9 @@ function Central({ projetoId, papel, userId }: Props) {
   const params = useSearchParams();
   const queryClient = useQueryClient();
   const permitido = veProjetoInteiro(papel);
+  // Monitor (D6): só gerente, diretor e super admin. Abre por ?modo=monitor, para o link poder ser compartilhado.
+  const podeMonitor = pode(papel, "conversas_monitor");
+  const noMonitor = podeMonitor && params.get("modo") === "monitor";
 
   const grupos = useQuery({ queryKey: chavesConversas.grupos(projetoId), queryFn: () => buscarGrupos(projetoId), enabled: permitido });
   const resumo = useQuery({ queryKey: chavesConversas.resumo(projetoId), queryFn: () => buscarResumo(projetoId), enabled: permitido });
@@ -67,6 +72,29 @@ function Central({ projetoId, papel, userId }: Props) {
   });
 
   const hrefGrupo = (id: string) => `${pathname}?grupo=${id}`;
+
+  const alternarModo = podeMonitor && (
+    <div role="group" aria-label="Modo da aba Conversas" className="inline-flex overflow-hidden rounded-[9px] border border-border">
+      {(
+        [
+          [false, "Conversas", pathname],
+          [true, "Monitor", `${pathname}?modo=monitor`],
+        ] as const
+      ).map(([monitor, rotulo, href]) => (
+        <Link
+          key={rotulo}
+          href={href}
+          aria-current={noMonitor === monitor ? "page" : undefined}
+          className={cn(
+            "px-3.5 py-1.5 text-[13.5px] font-semibold text-muted-foreground",
+            noMonitor === monitor && "bg-primary-soft text-primary",
+          )}
+        >
+          {rotulo}
+        </Link>
+      ))}
+    </div>
+  );
 
   // Tempo real da lista: qualquer mensagem nova/atualizada em grupos do projeto atualiza prévia, hora e contadores.
   const idsGrupos = lista.map((g) => g.id).sort().join(",");
@@ -100,6 +128,18 @@ function Central({ projetoId, papel, userId }: Props) {
     );
   }
 
+  if (noMonitor) {
+    return (
+      <div className="grid gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          {alternarModo}
+          <SeloOpenWa projetoId={projetoId} />
+        </div>
+        <MonitorConversas projetoId={projetoId} hrefGrupo={hrefGrupo} />
+      </div>
+    );
+  }
+
   if (grupos.isPending) return <EsqueletoConversas />;
 
   if (grupos.isError) {
@@ -109,7 +149,8 @@ function Central({ projetoId, papel, userId }: Props) {
   if (lista.length === 0) {
     return (
       <div className="grid gap-3">
-        <div className="flex justify-end">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          {alternarModo || <span />}
           <SeloOpenWa projetoId={projetoId} />
         </div>
         <Vazio
@@ -130,7 +171,8 @@ function Central({ projetoId, papel, userId }: Props) {
   return (
     <div className="cv-raiz grid gap-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-[15px] font-semibold">
+        <h2 className="flex flex-wrap items-center gap-3 text-[15px] font-semibold">
+          {alternarModo}
           Conversas do WhatsApp
           {naoLidasTotal > 0 && (
             <span className="ml-2 text-[13px] font-normal text-muted-foreground">

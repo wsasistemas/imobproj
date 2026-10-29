@@ -74,11 +74,14 @@ Verificado no local (29/10/2026): equipe Suporte técnico ligada ao DEMO-WSA pel
 
 ## Fase 4 — Monitor dentro de Conversas
 
-- [ ] Ação `conversas_monitor: ["diretor", "gerente"]` em `src/lib/projeto/permissoes.ts`.
-- [ ] Botão Conversas | Monitor na aba Conversas, só para quem tem a ação.
-- [ ] 4 indicadores e cartões em Online agora / Recentes / Foram para Anotações, filtros por equipe e número.
-- [ ] Clique no cartão abre a conversa na tela tipo WhatsApp; cartão de Anotações abre a aba Anotações.
-- [ ] Atualização em tempo real (Realtime de `wa_messages`, já na publication).
+- [x] Ação `conversas_monitor: ["diretor", "gerente"]` em `src/lib/projeto/permissoes.ts`.
+- [x] Botão Conversas | Monitor na aba Conversas, só para quem tem a ação.
+- [x] 4 indicadores e cartões em Online agora / Recentes / Foram para Anotações, filtros por equipe e número.
+- [x] Clique no cartão abre a conversa na tela tipo WhatsApp; cartão de Anotações abre a aba Anotações.
+- [x] Atualização em tempo real (Realtime de `wa_messages`, já na publication).
+- [x] Conversas deixa de listar os grupos em Anotações da equipe (`buscarGrupos`).
+
+Verificado no local (29/10/2026), super admin no PRJ-014: indicadores, seção Recentes com 6 grupos, espera de 14 h marcada e filtros por equipe e número.
 
 ## Fase 5 — Aba Anotações da equipe
 

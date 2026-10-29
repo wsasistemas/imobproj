@@ -100,11 +100,15 @@ const COLUNAS_MSG =
 // Consultas
 // ---------------------------------------------------------------------------------------------
 export async function buscarGrupos(projetoId: string): Promise<GrupoWa[]> {
-  const { data, error } = await createClient()
-    .from("wa_groups")
-    .select("id, project_id, session_id, equipe, nome, wa_group_id, ativo, auto_evidencia, auto_os, created_at")
-    .eq("project_id", projetoId)
-    .order("equipe");
+  const consulta = () =>
+    createClient()
+      .from("wa_groups")
+      .select("id, project_id, session_id, equipe, nome, wa_group_id, ativo, auto_evidencia, auto_os, created_at")
+      .eq("project_id", projetoId)
+      .order("equipe");
+  // Grupo com 30 dias sem mensagem está em Anotações da equipe e sai de Conversas. Sem a coluna (banco antigo), lista todos.
+  let { data, error } = await consulta().is("anotacao_desde", null);
+  if (error) ({ data, error } = await consulta());
   if (error) throw new Error("Não foi possível carregar os grupos de WhatsApp.");
   return (data ?? []) as GrupoWa[];
 }
