@@ -22,7 +22,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { createClient } from "@/lib/supabase/client";
 import type { VarianteSituacao } from "@/lib/projeto/tipos";
 import { DialogSessao } from "./dialog-sessao";
-import type { GrupoLinha, SessaoLinha, StatusSessao } from "./tipos";
+import type { GrupoLinha, ProjetoNumero, SessaoLinha, StatusSessao } from "./tipos";
 import { CHAVE_ADMIN_WHATSAPP, executar, haQuanto, telefoneFormatado } from "./util";
 
 const STATUS: Record<StatusSessao, { rotulo: string; variante: VarianteSituacao }> = {
@@ -41,15 +41,19 @@ function useAgora(): number {
   return agora;
 }
 
-type Projeto = { id: string; codigo: string; nome: string };
+// O titular do número é o cliente do projeto (D1). projects tem duas FKs para organizations: a dica escolhe a do cliente.
+const CLIENTE = "cliente:organizations!projects_cliente_org_id_fkey(nome)";
+
+/** Projeto de demonstração (D7): o número da WSA usado nas apresentações, até o projeto real ter número próprio. */
+export const ehDemonstracao = (nome: string | null | undefined) => /demonstra[cç][aã]o/i.test(nome ?? "");
 
 function useProjetos() {
   return useQuery({
     queryKey: [...CHAVE_ADMIN_WHATSAPP, "projetos"],
     queryFn: async () => {
-      const { data, error } = await createClient().from("projects").select("id, codigo, nome").order("codigo");
+      const { data, error } = await createClient().from("projects").select(`id, codigo, nome, ${CLIENTE}`).order("codigo");
       if (error) throw new Error(error.message);
-      return (data as Projeto[] | null) ?? [];
+      return (data as unknown as ProjetoNumero[] | null) ?? [];
     },
   });
 }
@@ -62,6 +66,7 @@ export function SecaoSessoes() {
   const projetos = useProjetos();
   const [editando, setEditando] = useState<SessaoLinha | "nova" | null>(null);
   const [excluindo, setExcluindo] = useState<SessaoLinha | null>(null);
+  const [filtroProjeto, setFiltroProjeto] = useState<string>("todos");
 
   const sessoes = useQuery({
     queryKey: [...CHAVE_ADMIN_WHATSAPP, "sessoes"],
@@ -69,7 +74,7 @@ export function SecaoSessoes() {
     queryFn: async () => {
       const { data, error } = await createClient()
         .from("wa_sessions")
-        .select("id, project_id, numero, openwa_url, openwa_session_id, status, last_heartbeat, projects(codigo, nome)")
+        .select(`id, project_id, numero, openwa_url, openwa_session_id, status, last_heartbeat, projects(codigo, nome, ${CLIENTE})`)
         .order("created_at");
       if (error) throw new Error(error.message);
       return (data as unknown as SessaoLinha[] | null) ?? [];
@@ -92,14 +97,30 @@ export function SecaoSessoes() {
         <div className="flex items-center gap-3">
           <IconeMenu icon={Smartphone} cor="var(--sys-teal)" tamanho={36} />
           <div className="grid gap-0.5">
-            <CardTitle>Sessões por projeto</CardTitle>
-            <CardDescription>Número do sistema de cada projeto, situação e último sinal recebido do OpenWA.</CardDescription>
+            <CardTitle>Números</CardTitle>
+            <CardDescription>
+              Cada número é do projeto, em nome da empresa contratante. Um projeto pode ter vários números; um número nunca
+              atende dois projetos.
+            </CardDescription>
           </div>
         </div>
-        <CardAction>
+        <CardAction className="flex flex-wrap items-center gap-2">
+          <select
+            aria-label="Filtrar por projeto"
+            className="h-9 rounded-md border border-input bg-background px-2 text-[13.5px]"
+            value={filtroProjeto}
+            onChange={(e) => setFiltroProjeto(e.target.value)}
+          >
+            <option value="todos">Todos os projetos</option>
+            {(projetos.data ?? []).map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.codigo} · {p.nome}
+              </option>
+            ))}
+          </select>
           <Button onClick={() => setEditando("nova")} disabled={!projetos.data?.length}>
             <Plus aria-hidden="true" />
-            Nova sessão
+            Conectar número
           </Button>
         </CardAction>
       </CardHeader>
@@ -110,8 +131,8 @@ export function SecaoSessoes() {
           <p className="text-[13.5px] text-danger">Não foi possível carregar as sessões.</p>
         ) : sessoes.data.length === 0 ? (
           <p className="text-[13.5px] text-muted-foreground">
-            Nenhuma sessão cadastrada. Crie uma sessão no OpenWA (leia o QR Code com o celular do número do sistema) e
-            cadastre aqui o número e o id dela para o projeto.
+            Nenhum número cadastrado. Use “Conectar número” para ler o QR Code ou aproveitar uma sessão que já está no
+            OpenWA.
           </p>
         ) : (
           <div className="overflow-x-auto rounded-[10px] border border-border">
@@ -119,6 +140,7 @@ export function SecaoSessoes() {
               <TableHeader>
                 <TableRow className="bg-table-head">
                   <TableHead>Projeto</TableHead>
+                  <TableHead>Titular</TableHead>
                   <TableHead>Número</TableHead>
                   <TableHead>Sessão no OpenWA</TableHead>
                   <TableHead>Status</TableHead>
@@ -127,12 +149,20 @@ export function SecaoSessoes() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {sessoes.data.map((s) => (
+                {sessoes.data
+                  .filter((s) => filtroProjeto === "todos" || s.project_id === filtroProjeto)
+                  .map((s) => (
                   <TableRow key={s.id}>
                     <TableCell>
                       <span className="font-medium">{s.projects?.codigo ?? "—"}</span>
+                      {ehDemonstracao(s.projects?.nome) && (
+                        <Badge variant="neutral" className="ml-2">
+                          Demonstração
+                        </Badge>
+                      )}
                       <span className="block text-[12.5px] text-muted-foreground">{s.projects?.nome}</span>
                     </TableCell>
+                    <TableCell className="text-[13.5px]">{s.projects?.cliente?.nome ?? "—"}</TableCell>
                     <TableCell className="tabular-nums">{telefoneFormatado(s.numero)}</TableCell>
                     <TableCell>
                       {s.openwa_session_id ? (
@@ -165,6 +195,10 @@ export function SecaoSessoes() {
         <DialogSessao
           sessao={editando === "nova" ? null : editando}
           projetos={projetos.data ?? []}
+          cadastradas={(sessoes.data ?? [])
+            .filter((s) => editando === "nova" || s.id !== editando.id)
+            .map((s) => s.openwa_session_id)
+            .filter((x): x is string => !!x)}
           onFechar={() => setEditando(null)}
         />
       )}

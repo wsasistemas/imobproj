@@ -53,10 +53,13 @@ Checklist binário: cada item está **feito** ou **não feito**. Nada de "parcia
 
 ## Fase 2 — Números
 
-- [ ] Tela Números: colunas Projeto e Titular (empresa contratante), filtro por projeto.
-- [ ] "Conectar número": projeto obrigatório; "Nova sessão (QR)" ou "Usar sessão existente" (lista as sessões do OpenWA que ainda não estão cadastradas).
-- [ ] QR atualizado sozinho enquanto o status for `qr_ready`; fecha ao ficar `ready`.
+- [x] Tela Números: colunas Projeto e Titular (empresa contratante), filtro por projeto.
+- [x] "Conectar número": projeto obrigatório; "Nova sessão (QR)" ou "Usar sessão existente" (lista as sessões do OpenWA que ainda não estão cadastradas).
+- [x] QR atualizado sozinho enquanto o status for `qr_ready`; fecha ao ficar `ready`.
 - [ ] Cliente "WSA Sistemas" e projeto "Demonstração WSA"; `wsa-sistemas` (+55 21 99477-1524) registrado nele com selo "Demonstração".
+- [x] Script `supabase/snippets/demonstracao-wsa.sql` (cliente WSA Sistemas + projeto DEMO-WSA), aplicado e conferido no banco local.
+
+Verificado no local (29/10/2026): "Usar sessão existente" leu as sessões do OpenWA, preencheu número e titular e gravou `wsa-sistemas` no DEMO-WSA. O QR de sessão nova não foi testado com celular (criaria uma sessão real no OpenWA).
 
 ## Fase 3 — Grupos e equipes
 
@@ -105,6 +108,7 @@ Checklist binário: cada item está **feito** ou **não feito**. Nada de "parcia
 
 ## Pendências que dependem do Wagner
 
+- Na nuvem: rodar `supabase/snippets/demonstracao-wsa.sql` e conectar `wsa-sistemas` ao DEMO-WSA pela tela (o item de registro da Fase 2 fica aberto até isso).
 - Depois da Fase 1: `bash scripts/migrar-nuvem.sh` e `npx supabase functions deploy openwa-webhook`.
 
 - Aprovar K1–K6 da Base de Conhecimento.

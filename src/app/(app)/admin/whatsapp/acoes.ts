@@ -185,6 +185,116 @@ export async function configurarReenvio(entrada: unknown): Promise<ResultadoAcao
   return sucesso(null);
 }
 
+// ---------------------------------------------------------------- sessões no OpenWA (QR / sessão existente)
+
+const TIMEOUT_OPENWA_MS = 15_000;
+
+/** URL global + API key do Vault. A chave fica só no servidor. */
+async function credencialOpenwa(): Promise<{ url: string; chave: string } | { erro: string }> {
+  const supabase = await createClient();
+  const { data: cfg, error } = await supabase.from("openwa_config").select("url").eq("id", true).maybeSingle();
+  if (error) return { erro: mensagemErroBanco(error) };
+  const url = (cfg as { url: string | null } | null)?.url;
+  if (!url) return { erro: "Salve o endereço do OpenWA antes." };
+  const { data: chave, error: erroChave } = await createAdminClient().rpc("fn_openwa_segredo", { p_nome: "imobproj_openwa_api_key" });
+  if (erroChave) return { erro: "Não foi possível ler a API key no Vault." };
+  if (typeof chave !== "string" || !chave) return { erro: "Salve a API key antes." };
+  return { url, chave };
+}
+
+/** Chama o OpenWA com a API key; devolve o JSON ou a mensagem de erro do OpenWA. */
+async function chamarOpenwa<T>(metodo: "GET" | "POST", caminho: string, corpo?: unknown): Promise<ResultadoAcao<T>> {
+  const cred = await credencialOpenwa();
+  if ("erro" in cred) return falha(cred.erro);
+  try {
+    const r = await fetch(`${cred.url}/api${caminho}`, {
+      method: metodo,
+      headers: {
+        "X-API-Key": cred.chave,
+        Accept: "application/json",
+        "X-Tunnel-Skip-AntiPhishing-Page": "true",
+        ...(corpo ? { "Content-Type": "application/json" } : {}),
+      },
+      body: corpo ? JSON.stringify(corpo) : undefined,
+      signal: AbortSignal.timeout(TIMEOUT_OPENWA_MS),
+      cache: "no-store",
+    });
+    const texto = await r.text();
+    let json: unknown = null;
+    try {
+      json = texto ? JSON.parse(texto) : null;
+    } catch {
+      json = null;
+    }
+    if (!r.ok) {
+      const msg = (json as { message?: string | string[] } | null)?.message;
+      const detalhe = Array.isArray(msg) ? msg.join("; ") : (msg ?? texto.slice(0, 200));
+      return falha(r.status === 401 || r.status === 403 ? "API key recusada pelo OpenWA." : `OpenWA respondeu ${r.status}: ${detalhe}`);
+    }
+    return sucesso(json as T);
+  } catch (e) {
+    const timeout = e instanceof Error && (e.name === "TimeoutError" || e.name === "AbortError");
+    return falha(timeout ? "O OpenWA não respondeu a tempo." : `Não foi possível falar com o OpenWA: ${e instanceof Error ? e.message : String(e)}`);
+  }
+}
+
+/** Sessões que existem no OpenWA, marcando as que já estão cadastradas num projeto. */
+export async function sessoesDoOpenwa(): Promise<ResultadoAcao<SessaoOpenwaTeste[]>> {
+  const negado = await garantirSuperAdmin();
+  if (negado) return negado;
+  const r = await chamarOpenwa<SessaoApi[]>("GET", "/sessions");
+  if (!r.ok) return r;
+  const lista = Array.isArray(r.dados) ? r.dados : [];
+  return sucesso(
+    lista.map((s) => ({
+      id: String(s.id ?? ""),
+      nome: typeof s.name === "string" ? s.name : null,
+      status: typeof s.status === "string" ? s.status : null,
+      telefone: typeof s.phone === "string" ? s.phone : null,
+    })),
+  );
+}
+
+const esquemaNomeSessao = z
+  .string()
+  .trim()
+  .min(3, "O nome precisa de pelo menos 3 letras.")
+  .max(50, "Nome longo demais.")
+  .regex(/^[A-Za-z0-9-]+$/, "Use só letras, números e hífen (ex.: torre-norte-obra).");
+
+/** Cria a sessão no OpenWA e já inicia (o QR aparece em seguida). */
+export async function novaSessaoOpenwa(nome: unknown): Promise<ResultadoAcao<{ id: string }>> {
+  const v = esquemaNomeSessao.safeParse(nome);
+  if (!v.success) return falha(primeiroErro(v.error));
+  const negado = await garantirSuperAdmin();
+  if (negado) return negado;
+  const criada = await chamarOpenwa<{ id?: string }>("POST", "/sessions", { name: v.data });
+  if (!criada.ok) return criada;
+  const id = String(criada.dados?.id ?? "");
+  if (!id) return falha("O OpenWA não devolveu o id da sessão.");
+  const iniciada = await chamarOpenwa<unknown>("POST", `/sessions/${encodeURIComponent(id)}/start`);
+  if (!iniciada.ok) return iniciada;
+  return sucesso({ id });
+}
+
+export type EstadoQr = { status: string | null; telefone: string | null; qr: string | null };
+
+/** Status da sessão e, enquanto espera leitura, o QR em data URL. */
+export async function qrDaSessao(openwaId: unknown): Promise<ResultadoAcao<EstadoQr>> {
+  const v = z.string().trim().min(1).max(120).safeParse(openwaId);
+  if (!v.success) return falha("Sessão inválida.");
+  const negado = await garantirSuperAdmin();
+  if (negado) return negado;
+  const id = encodeURIComponent(v.data);
+  const s = await chamarOpenwa<SessaoApi>("GET", `/sessions/${id}`);
+  if (!s.ok) return s;
+  const status = typeof s.dados?.status === "string" ? s.dados.status : null;
+  const telefone = typeof s.dados?.phone === "string" ? s.dados.phone : null;
+  if (status !== "qr_ready") return sucesso({ status, telefone, qr: null });
+  const q = await chamarOpenwa<{ qrCode?: string }>("GET", `/sessions/${id}/qr`);
+  return sucesso({ status, telefone, qr: q.ok && typeof q.dados?.qrCode === "string" ? q.dados.qrCode : null });
+}
+
 // ---------------------------------------------------------------- sessões
 
 const esquemaSessao = z.object({

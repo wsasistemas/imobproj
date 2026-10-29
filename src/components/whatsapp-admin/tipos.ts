@@ -31,8 +31,11 @@ export type SessaoLinha = {
   openwa_session_id: string | null;
   status: StatusSessao;
   last_heartbeat: string | null;
-  projects: { codigo: string; nome: string } | null;
+  projects: { codigo: string; nome: string; cliente: { nome: string } | null } | null;
 };
+
+/** Projeto no cadastro de números: o titular do número é o cliente (empresa contratante) do projeto. */
+export type ProjetoNumero = { id: string; codigo: string; nome: string; cliente: { nome: string } | null };
 
 export type GrupoLinha = {
   id: string;
