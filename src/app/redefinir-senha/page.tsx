@@ -2,16 +2,27 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Aviso, CampoSenha, LoginCard, LoginLayout, submitCls } from "@/components/login/login-layout";
 import { createClient } from "@/lib/supabase/client";
 import { esquemaNovaSenha, type NovaSenha } from "@/lib/senha";
 
-// Chega aqui pelo link de "Esqueceu a senha?" (/auth/callback já abriu a sessão de recuperação).
+// Chega aqui pelo link de "Esqueceu a senha?" (/auth/callback já abriu a sessão de recuperação)
+// ou pelo convite (/auth/confirmar abriu a sessão; ?convite=1 muda o texto).
 export default function RedefinirSenhaPage() {
+  // useSearchParams pede Suspense no build (página pré-renderizada).
+  return (
+    <Suspense>
+      <FormNovaSenha />
+    </Suspense>
+  );
+}
+
+function FormNovaSenha() {
   const router = useRouter();
+  const convite = useSearchParams().get("convite") === "1";
   const [erro, setErro] = useState<string | null>(null);
   const {
     register,
@@ -24,7 +35,11 @@ export default function RedefinirSenhaPage() {
     const supabase = createClient();
     const { data } = await supabase.auth.getUser();
     if (!data.user) {
-      setErro("O link expirou ou já foi usado. Volte para a entrada e peça um novo.");
+      setErro(
+        convite
+          ? "O convite expirou ou já foi usado. Peça ao administrador para reenviar o convite."
+          : "O link expirou ou já foi usado. Volte para a entrada e peça um novo.",
+      );
       return;
     }
     const { error } = await supabase.auth.updateUser({ password: senha });
@@ -38,7 +53,8 @@ export default function RedefinirSenhaPage() {
 
   return (
     <LoginLayout>
-      <LoginCard onSubmit={handleSubmit(salvar)} titulo="Nova senha" sub="Crie a sua nova senha de acesso.">
+      <LoginCard onSubmit={handleSubmit(salvar)} titulo={convite ? "Crie sua senha" : "Nova senha"}
+        sub={convite ? "Bem-vindo ao IMOBPROJ. Defina a senha que você vai usar para entrar." : "Crie a sua nova senha de acesso."}>
         {erro && <Aviso>{erro}</Aviso>}
         <CampoSenha
           id="nova-senha"

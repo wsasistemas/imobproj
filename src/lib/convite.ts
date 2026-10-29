@@ -18,7 +18,8 @@ export async function enviarConvite(email: string, nome: string) {
   return createAdminClient().auth.admin.inviteUserByEmail(email, {
     // "sistema" faz o trigger imobproj_on_auth_user_created criar o profile (o Auth é compartilhado).
     data: { nome, sistema: "imobproj" },
-    redirectTo: `${origem}/auth/callback?next=/redefinir-senha`,
+    // O convite volta com a sessão no #hash (sem PKCE): só a página de cliente /auth/confirmar consegue lê-la.
+    redirectTo: `${origem}/auth/confirmar?next=${encodeURIComponent("/redefinir-senha?convite=1")}`,
   });
 }
 

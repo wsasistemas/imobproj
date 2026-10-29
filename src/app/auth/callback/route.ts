@@ -12,6 +12,9 @@ export async function GET(request: NextRequest) {
     const supabase = await createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) return NextResponse.redirect(`${origin}${destino}`);
+    return NextResponse.redirect(`${origin}/login?erro=link`);
   }
-  return NextResponse.redirect(`${origin}/login?erro=link`);
+  // Sem ?code=: o convite (gerado no servidor, sem PKCE) traz a sessão no #hash, que o servidor não vê.
+  // O navegador mantém o #hash no redirecionamento, e /auth/confirmar lê e grava a sessão.
+  return NextResponse.redirect(`${origin}/auth/confirmar?next=${encodeURIComponent(destino)}`);
 }

@@ -2,23 +2,38 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, Loader2, Plus, Send, X } from "lucide-react";
+import { Check, KeyRound, Loader2, Plus, Send, X } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import type { z } from "zod";
-import { convitesPendentesUsuarios, reenviarConviteUsuario, salvarUsuario } from "@/app/(app)/cadastros/usuarios/acoes";
+import {
+  convitesPendentesUsuarios,
+  definirSenhaUsuario,
+  reenviarConviteUsuario,
+  salvarUsuario,
+} from "@/app/(app)/cadastros/usuarios/acoes";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ROTULO_PAPEL, type PapelMembro } from "@/lib/projeto/tipos";
+import { esquemaNovaSenha, type NovaSenha } from "@/lib/senha";
 import { createClient } from "@/lib/supabase/client";
 import { MSG_BANCO_DESATUALIZADO, ehBancoDesatualizado } from "@/lib/acoes";
 import { cn } from "@/lib/utils";
@@ -523,6 +538,7 @@ function FichaUsuario({
 
         {podeEditar && (
           <div className="flex flex-wrap justify-end gap-2 border-t border-border px-4 py-3">
+            {usuario && podeDefinirPerfil && <DialogDefinirSenha usuario={usuario} />}
             {usuario && convitePendente && (
               <Button type="button" variant="outline" disabled={mReenviar.isPending} onClick={() => mReenviar.mutate(usuario.id)}>
                 {mReenviar.isPending ? <Loader2 className="animate-spin" aria-hidden="true" /> : <Send aria-hidden="true" />}
@@ -540,5 +556,90 @@ function FichaUsuario({
         )}
       </form>
     </Card>
+  );
+}
+
+/** Super admin define a senha de outro usuário (convite que não chegou ou não abriu). */
+function DialogDefinirSenha({ usuario }: { usuario: Usuario }) {
+  const queryClient = useQueryClient();
+  const [aberto, setAberto] = useState(false);
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<NovaSenha>({ resolver: zodResolver(esquemaNovaSenha), defaultValues: { senha: "", confirmacao: "" } });
+  const mDefinir = useMutation({
+    mutationFn: (d: NovaSenha) => executar(definirSenhaUsuario({ id: usuario.id, ...d })),
+    onSuccess: (msg) => {
+      toast.success(msg);
+      queryClient.invalidateQueries({ queryKey: [...CHAVE, "convites"] });
+      reset();
+      setAberto(false);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <Dialog
+      open={aberto}
+      onOpenChange={(v) => {
+        setAberto(v);
+        if (!v) reset();
+      }}
+    >
+      <DialogTrigger
+        render={
+          <Button type="button" variant="outline">
+            <KeyRound aria-hidden="true" />
+            Definir senha
+          </Button>
+        }
+      />
+      <DialogContent className="sm:max-w-md">
+        {/* Form à parte: o diálogo fica fora do <form> da ficha no DOM (portal), mas o submit não pode borbulhar. */}
+        <form
+          onSubmit={(e) => {
+            e.stopPropagation();
+            handleSubmit((d) => mDefinir.mutate(d))(e);
+          }}
+          noValidate
+          className="grid gap-4"
+        >
+          <DialogHeader>
+            <DialogTitle>Definir senha de {usuario.nome || usuario.email}</DialogTitle>
+            <DialogDescription>
+              A conta é a mesma em todos os sistemas IMOBSYSTEMS: a senha nova vale em todos. O convite pendente deixa de
+              valer. Use pelo menos 8 caracteres, com letras e números.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-1.5">
+            <Label htmlFor="def-senha">Nova senha</Label>
+            <Input id="def-senha" type="password" autoComplete="new-password" aria-invalid={!!errors.senha} {...register("senha")} />
+            {errors.senha && <p className="text-[13px] text-danger">{errors.senha.message}</p>}
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="def-confirmacao">Confirme a senha</Label>
+            <Input
+              id="def-confirmacao"
+              type="password"
+              autoComplete="new-password"
+              aria-invalid={!!errors.confirmacao}
+              {...register("confirmacao")}
+            />
+            {errors.confirmacao && <p className="text-[13px] text-danger">{errors.confirmacao.message}</p>}
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setAberto(false)}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={mDefinir.isPending}>
+              {mDefinir.isPending && <Loader2 className="animate-spin" aria-hidden="true" />}
+              Salvar senha
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }

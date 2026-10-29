@@ -5,6 +5,7 @@ import { primeiroErro } from "@/components/cadastros/util";
 import { falha, mensagemErroBanco, sucesso, type ResultadoAcao } from "@/lib/acoes";
 import { enviarConvite, mensagemErroConvite } from "@/lib/convite";
 import { garantirPermissao, minhasPermissoes } from "@/lib/perfil-acesso";
+import { esquemaNovaSenha } from "@/lib/senha";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -124,4 +125,44 @@ export async function reenviarConviteUsuario(entrada: unknown): Promise<Resultad
     return falha(e instanceof Error ? e.message : "Não foi possível reenviar o convite.");
   }
   return sucesso(`Convite reenviado para ${perfil.email}.`);
+}
+
+/**
+ * Super admin define a senha de um usuário do IMOBPROJ (convite que não chegou, pessoa sem e-mail à mão).
+ * Também confirma o e-mail: o convite pendente deixa de valer. A conta do Auth é compartilhada pelos sistemas
+ * IMOBSYSTEMS, então a senha nova vale em todos eles (a tela avisa).
+ */
+export async function definirSenhaUsuario(entrada: unknown): Promise<ResultadoAcao<string>> {
+  const alvo = esquemaId.safeParse(entrada);
+  if (!alvo.success) return falha(primeiroErro(alvo.error));
+  const nova = esquemaNovaSenha.safeParse(entrada);
+  if (!nova.success) return falha(primeiroErro(nova.error));
+  const v = { data: { id: alvo.data.id, senha: nova.data.senha } };
+  const { superAdmin } = await minhasPermissoes();
+  if (!superAdmin) return falha("Só o super admin pode definir a senha de outro usuário.");
+
+  const supabase = await createClient();
+  const { data: eu } = await supabase.auth.getUser();
+  if (v.data.id === eu.user?.id) return falha("Para trocar a sua própria senha, use “Alterar senha” no menu.");
+
+  // Só quem é usuário do IMOBPROJ (tem profile aqui) — não mexe em conta de outro sistema.
+  const { data: perfil, error } = await supabase.from("profiles").select("nome, email").eq("id", v.data.id).maybeSingle();
+  if (error) return falha(mensagemErroBanco(error));
+  if (!perfil) return falha("Usuário não encontrado no IMOBPROJ.");
+
+  try {
+    const { error: erroAuth } = await createAdminClient().auth.admin.updateUserById(v.data.id, {
+      password: v.data.senha,
+      email_confirm: true,
+    });
+    if (erroAuth) {
+      const msg = erroAuth.message.toLowerCase();
+      if (msg.includes("weak") || msg.includes("password"))
+        return falha("O Supabase recusou a senha (fraca ou já vazada). Escolha outra.");
+      return falha("Não foi possível definir a senha.");
+    }
+  } catch (e) {
+    return falha(e instanceof Error ? e.message : "Não foi possível definir a senha.");
+  }
+  return sucesso(`Senha de ${perfil.nome || perfil.email} definida. Passe a senha a ela por um canal seguro.`);
 }
