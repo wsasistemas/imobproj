@@ -27,8 +27,20 @@ if ! saida="$($SUPA db query --linked "$historico" 2>&1)"; then
   exit 1
 fi
 
-aplicadas="$($SUPA db query --linked "select coalesce(string_agg(versao, ' '), '') as v from imobproj._migracoes" 2>/dev/null \
-  | grep -o '"v": *"[^"]*"' | sed -E 's/"v": *"([^"]*)"/\1/')"
+# --output-format json: sem ele a CLI imprime uma tabela no terminal (e JSON só quando roda dentro de um agente),
+# o grep não acha nada e o script morria calado pelo pipefail.
+if ! saida="$($SUPA db query --linked --output-format json "select coalesce(string_agg(versao, ' '), '') as v from imobproj._migracoes" 2>&1)"; then
+  echo "$saida" | tail -5
+  echo "Não consegui ler imobproj._migracoes na nuvem."
+  exit 1
+fi
+aplicadas="$(grep -o '"v": *"[^"]*"' <<<"$saida" | sed -E 's/"v": *"([^"]*)"/\1/' || true)"
+if [[ -z "$aplicadas" ]]; then
+  # Histórico vazio (ou saída que não entendi): aplicar tudo de novo seria perigoso — melhor parar.
+  echo "$saida" | tail -10
+  echo "Não entendi o histórico de migrations da nuvem (veio vazio). Parei sem aplicar nada."
+  exit 1
+fi
 
 pendentes=()
 for arquivo in supabase/migrations/*.sql; do
@@ -57,7 +69,7 @@ for arquivo in "${pendentes[@]}"; do
     echo "commit;"
   } > "$TMP/$base.sql"
   echo "Aplicando $base..."
-  if ! saida="$($SUPA db query --linked -f "$TMP/$base.sql" 2>&1)" || grep -q '"_tag": *"Error"\|ERROR:' <<<"$saida"; then
+  if ! saida="$($SUPA db query --linked --output-format json -f "$TMP/$base.sql" 2>&1)" || grep -q '"_tag": *"Error"\|ERROR:' <<<"$saida"; then
     echo "$saida" | tail -20
     echo "FALHOU em $base — parei aqui. Corrija e rode de novo (as anteriores já estão gravadas)."
     exit 1
