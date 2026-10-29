@@ -302,6 +302,7 @@ function AbaOs({ c, podeEditar }: { c: Configuracoes; podeEditar: boolean }) {
         <LinhaChave
           id="cfg-resumo"
           titulo="Enviar resumo semanal de horas ao usuário-chave"
+          ajuda="Toda segunda às 8h: OS executadas, aprovadas e aguardando aceite na semana anterior, no grupo do cliente no WhatsApp e por push no app."
           checked={v.resumo_semanal_usuario_chave}
           onChange={(x) => muda({ resumo_semanal_usuario_chave: x })}
         />
