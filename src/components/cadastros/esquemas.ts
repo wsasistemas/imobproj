@@ -82,6 +82,8 @@ export const esquemaUsuario = z.object({
   atende_whatsapp: z.boolean(),
   ativo: z.boolean(),
   equipes: z.array(id),
+  /** Chave do perfil de acesso (imobproj.perfis). Só o super admin troca. */
+  perfil: z.string().max(41).nullable().optional(),
 });
 export type UsuarioEntrada = z.input<typeof esquemaUsuario>;
 

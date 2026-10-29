@@ -27,7 +27,8 @@ schema_paths = []
 
 [db.seed]
 enabled = true
-sql_paths = ["./seed.sql"]
+# seed.sql: dados de teste; local/central-acessos.sql: réplica da Central de Acessos (só local, nunca vai à nuvem)
+sql_paths = ["./seed.sql", "./local/central-acessos.sql"]
 
 [realtime]
 enabled = true

@@ -4,6 +4,8 @@ import { Usuarios } from "@/components/cadastros/usuarios";
 import { MatrizPermissoes } from "@/components/equipe/matriz-permissoes";
 import { MembrosProjeto } from "@/components/equipe/membros-projeto";
 import { CabecalhoPagina } from "@/components/shell/cabecalho-pagina";
+import { SemAcesso } from "@/components/shell/sem-acesso";
+import { minhasPermissoes, pode } from "@/lib/perfil-acesso";
 import { ehSuperAdmin } from "@/lib/projeto/servidor";
 import { COOKIE_PROJETO_ATUAL } from "@/lib/tema";
 
@@ -12,9 +14,16 @@ export const metadata: Metadata = { title: "Usuários" };
 type Props = { searchParams: Promise<{ aba?: string }> };
 
 // Cadastros › Usuários (antiga "Equipe e permissões"). Abas: cadastro das pessoas, acesso por projeto
-// (membros e papéis) e a matriz do que cada papel pode fazer. Só o super admin altera.
+// (membros e papéis) e a matriz do que cada papel pode fazer. O cadastro altera quem o perfil autoriza; papéis por projeto e perfil, só o super admin.
 export default async function UsuariosPage({ searchParams }: Props) {
-  const [{ aba }, superAdmin, cookieStore] = await Promise.all([searchParams, ehSuperAdmin(), cookies()]);
+  const [{ aba }, superAdmin, cookieStore, permissoes, podeEditar] = await Promise.all([
+    searchParams,
+    ehSuperAdmin(),
+    cookies(),
+    minhasPermissoes(),
+    pode("cadastros_usuarios", "editar"),
+  ]);
+  if (!permissoes.superAdmin && !permissoes.menus.cadastros_usuarios?.ver) return <SemAcesso menu="cadastros_usuarios" />;
   const atual = aba === "projetos" || aba === "matriz" ? aba : "usuarios";
 
   return (
@@ -29,7 +38,7 @@ export default async function UsuariosPage({ searchParams }: Props) {
           { label: "Matriz de permissões", href: "/cadastros/usuarios?aba=matriz", ativa: atual === "matriz" },
         ]}
       />
-      {atual === "usuarios" && <Usuarios superAdmin={superAdmin} />}
+      {atual === "usuarios" && <Usuarios podeEditar={podeEditar} podeDefinirPerfil={permissoes.superAdmin} />}
       {atual === "projetos" && (
         <MembrosProjeto superAdmin={superAdmin} projetoInicialId={cookieStore.get(COOKIE_PROJETO_ATUAL)?.value} />
       )}

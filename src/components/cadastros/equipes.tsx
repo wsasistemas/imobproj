@@ -42,7 +42,7 @@ type Equipe = {
 
 const CHAVE = ["cadastros", "equipes"];
 
-export function Equipes({ superAdmin }: { superAdmin: boolean }) {
+export function Equipes({ podeEditar }: { podeEditar: boolean }) {
   const queryClient = useQueryClient();
   const [editando, setEditando] = useState<Equipe | null>(null);
   const [aRemover, setARemover] = useState<Equipe | null>(null);
@@ -108,7 +108,7 @@ export function Equipes({ superAdmin }: { superAdmin: boolean }) {
 
   return (
     <div className="grid gap-4">
-      {lista.length === 0 && !superAdmin && (
+      {lista.length === 0 && !podeEditar && (
         <EstadoVazio icone="equipes" titulo="Nenhuma equipe" texto="As equipes aparecem aqui quando o super admin as cria." />
       )}
       <div className="grid items-start gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -117,7 +117,7 @@ export function Equipes({ superAdmin }: { superAdmin: boolean }) {
             key={eq.id}
             equipe={eq}
             pessoas={pessoas.data ?? []}
-            superAdmin={superAdmin}
+            podeEditar={podeEditar}
             adicionando={mAdicionar.isPending && mAdicionar.variables?.team_id === eq.id}
             onAdicionar={(user_id) => mAdicionar.mutate({ team_id: eq.id, user_id })}
             onTirar={(user_id) => mTirar.mutate({ team_id: eq.id, user_id })}
@@ -125,7 +125,7 @@ export function Equipes({ superAdmin }: { superAdmin: boolean }) {
             onExcluir={() => setARemover(eq)}
           />
         ))}
-        {superAdmin && (
+        {podeEditar && (
           <FormEquipe key={editando?.id ?? "nova"} equipe={editando} pessoas={pessoas.data ?? []} onConcluir={() => setEditando(null)} />
         )}
       </div>
@@ -154,7 +154,7 @@ export function Equipes({ superAdmin }: { superAdmin: boolean }) {
 function CartaoEquipe({
   equipe,
   pessoas,
-  superAdmin,
+  podeEditar,
   adicionando,
   onAdicionar,
   onTirar,
@@ -163,7 +163,7 @@ function CartaoEquipe({
 }: {
   equipe: Equipe;
   pessoas: Pessoa[];
-  superAdmin: boolean;
+  podeEditar: boolean;
   adicionando: boolean;
   onAdicionar: (userId: string) => void;
   onTirar: (userId: string) => void;
@@ -188,7 +188,7 @@ function CartaoEquipe({
         </div>
         <div className="flex shrink-0 items-center gap-1">
           {equipe.setor && <Badge variant="info">Setor {equipe.setor}</Badge>}
-          {superAdmin && (
+          {podeEditar && (
             <DropdownMenu>
               <DropdownMenuTrigger render={<Button variant="ghost" size="icon" aria-label={`Ações da equipe ${equipe.nome}`} />}>
                 <MoreHorizontal aria-hidden="true" />
@@ -226,7 +226,7 @@ function CartaoEquipe({
                 </div>
                 <div className="flex shrink-0 items-center gap-1">
                   {m.id === equipe.lider_id && <Badge variant="success">Líder</Badge>}
-                  {superAdmin && (
+                  {podeEditar && (
                     <Button
                       variant="ghost"
                       size="icon"
@@ -244,7 +244,7 @@ function CartaoEquipe({
         </ul>
       )}
       <div className="flex items-center justify-between gap-2 border-t border-border-soft px-4 py-3">
-        {superAdmin && itensFora.length > 0 ? (
+        {podeEditar && itensFora.length > 0 ? (
           <Select items={itensFora} value={null} onValueChange={(v) => v && onAdicionar(v)} disabled={adicionando}>
             <SelectTrigger size="sm" className="w-[200px]" aria-label={`Adicionar pessoa à equipe ${equipe.nome}`}>
               <SelectValue placeholder="+ Adicionar pessoa" />

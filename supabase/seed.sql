@@ -484,3 +484,15 @@ insert into imobproj.team_members (team_id, user_id) values
   ('b2000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000003'),
   ('b2000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000001')
 on conflict do nothing;
+
+-- Fase 2: perfil de acesso de cada usuário de teste (o super admin não precisa de perfil).
+update imobproj.profiles p
+   set perfil = case
+     when p.email in ('diretor@exemplo.com.br', 'gerente@exemplo.com.br') then 'gerente'
+     when p.email = 'usuario.chave@exemplo.com.br' then 'usuario_chave'
+     when p.email = 'prestador@exemplo.com.br' then 'prestador'
+     when p.email = 'analista@exemplo.com.br' then 'analista'
+     when p.atende_whatsapp then 'atendente'
+     else 'analista'
+   end
+ where p.perfil is null and not p.is_super_admin;

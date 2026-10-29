@@ -1,13 +1,15 @@
 import type { Metadata } from "next";
 import { Clientes } from "@/components/cadastros/clientes";
 import { CabecalhoPagina } from "@/components/shell/cabecalho-pagina";
-import { ehSuperAdmin } from "@/lib/projeto/servidor";
+import { SemAcesso } from "@/components/shell/sem-acesso";
+import { pode } from "@/lib/perfil-acesso";
 
 export const metadata: Metadata = { title: "Clientes" };
 
-// Cadastros › Clientes. Todos os logados consultam; só o super admin altera (Server Actions + RLS organizations_write).
+// Cadastros › Clientes. Todos os logados consultam; altera o super admin ou quem o perfil autoriza (Server Actions + RLS organizations_write).
 export default async function ClientesPage() {
-  const superAdmin = await ehSuperAdmin();
+  const [podeVer, podeEditar] = await Promise.all([pode("cadastros_clientes"), pode("cadastros_clientes", "editar")]);
+  if (!podeVer) return <SemAcesso menu="cadastros_clientes" />;
   return (
     <>
       <CabecalhoPagina
@@ -15,7 +17,7 @@ export default async function ClientesPage() {
         titulo="Clientes"
         subtitulo="Empresas atendidas, contatos principais e os projetos de cada uma."
       />
-      <Clientes superAdmin={superAdmin} />
+      <Clientes podeEditar={podeEditar} />
     </>
   );
 }

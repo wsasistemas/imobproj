@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { MENU, hrefDoItem, projetoDoCaminho, telaPorCaminho, type ItemMenu } from "@/config/menu";
+import { hrefDoItem, menuVisivel, projetoDoCaminho, telaPorCaminho, type AcessoMenu, type ItemMenu } from "@/config/menu";
 import { cn } from "@/lib/utils";
 import { DialogAlterarSenha } from "./dialog-alterar-senha";
 import { IconeMenu } from "./icone-menu";
@@ -23,10 +23,13 @@ const ativoCls = "bg-(image:--menu-ativo) text-white hover:bg-(image:--menu-ativ
 export function MenuLateral({
   recolhido = false,
   projetoAtualId,
+  acesso,
   onRecolher,
   onNavegar,
 }: {
   recolhido?: boolean;
+  /** Perfil de acesso: filtra os itens do menu (sem ele, mostra tudo). */
+  acesso?: AcessoMenu;
   /** Último projeto visitado (cookie), para os subitens de Projetos quando não há projeto no caminho. */
   projetoAtualId?: string;
   /** Sem esta função (gaveta do celular) o item "Recolher menu" some. */
@@ -41,7 +44,7 @@ export function MenuLateral({
   return (
     <div className="flex h-full flex-col bg-sidebar-bg text-sidebar-text">
       <nav aria-label="Menu lateral" className={cn("min-h-0 flex-1 overflow-y-auto py-5 [scrollbar-width:thin]", recolhido ? "px-3" : "px-3")}>
-        {MENU.map((grupo) => (
+        {menuVisivel(acesso).map((grupo) => (
           <div key={grupo.id} className="mb-5 last:mb-0">
             {recolhido ? (
               <div className="mx-auto mb-2 h-px w-6 bg-sidebar-hover" aria-hidden="true" />

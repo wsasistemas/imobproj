@@ -16,6 +16,7 @@ import {
   iconeCampo,
   submitCls,
 } from "@/components/login/login-layout";
+import { MSG_SEM_ACESSO, podeEntrarNoApp } from "@/lib/central-acessos";
 import { createClient } from "@/lib/supabase/client";
 
 const esquemaEntrada = z.object({
@@ -61,15 +62,18 @@ function mensagemDeErro(mensagem: string): string {
 export function FormEntrada({
   destino,
   erroLink,
+  semAcesso = false,
   configurado,
 }: {
   destino: string;
   erroLink: boolean;
+  /** Voltou do middleware: a Central de Acessos bloqueou esta conta no IMOBPROJ. */
+  semAcesso?: boolean;
   configurado: boolean;
 }) {
   const [esqueci, setEsqueci] = useState<string | null>(null);
   return esqueci === null ? (
-    <FormLogin destino={destino} erroLink={erroLink} configurado={configurado} onEsqueci={setEsqueci} />
+    <FormLogin destino={destino} erroLink={erroLink} semAcesso={semAcesso} configurado={configurado} onEsqueci={setEsqueci} />
   ) : (
     <FormEsqueci emailInicial={esqueci} onVoltar={() => setEsqueci(null)} />
   );
@@ -78,17 +82,21 @@ export function FormEntrada({
 function FormLogin({
   destino,
   erroLink,
+  semAcesso,
   configurado,
   onEsqueci,
 }: {
   destino: string;
   erroLink: boolean;
+  semAcesso: boolean;
   configurado: boolean;
   onEsqueci: (email: string) => void;
 }) {
   const router = useRouter();
   const [lembrar, setLembrar] = useState(false);
-  const [erro, setErro] = useState<string | null>(erroLink ? "O link expirou ou já foi usado. Peça um novo." : null);
+  const [erro, setErro] = useState<string | null>(
+    semAcesso ? MSG_SEM_ACESSO : erroLink ? "O link expirou ou já foi usado. Peça um novo." : null,
+  );
   const {
     register,
     handleSubmit,
@@ -112,9 +120,16 @@ function FormLogin({
 
   async function entrar({ email, senha }: Entrada) {
     setErro(null);
-    const { error } = await createClient().auth.signInWithPassword({ email, password: senha });
+    const supabase = createClient();
+    const { error } = await supabase.auth.signInWithPassword({ email, password: senha });
     if (error) {
       setErro(mensagemDeErro(error.message));
+      return;
+    }
+    // Central de Acessos: conta bloqueada no IMOBPROJ não entra (falha da consulta não trava a entrada).
+    if ((await podeEntrarNoApp(supabase)) === false) {
+      await supabase.auth.signOut();
+      setErro(MSG_SEM_ACESSO);
       return;
     }
     guardarEmailLembrado(lembrar ? email : "");

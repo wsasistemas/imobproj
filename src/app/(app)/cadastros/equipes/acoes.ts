@@ -3,15 +3,15 @@
 import { esquemaEquipe, esquemaId, esquemaMembroEquipe } from "@/components/cadastros/esquemas";
 import { primeiroErro } from "@/components/cadastros/util";
 import { falha, mensagemErroBanco, sucesso, type ResultadoAcao } from "@/lib/acoes";
-import { garantirSuperAdmin } from "@/lib/cadastros-servidor";
+import { garantirPermissao } from "@/lib/perfil-acesso";
 import { createClient } from "@/lib/supabase/server";
 
-// Cadastros › Equipes: grupos de pessoas (teams/team_members). Só o super admin grava (RLS teams_write).
+// Cadastros › Equipes: grupos de pessoas (teams/team_members). Grava o super admin ou quem o perfil autoriza (RLS teams_write + *_perfil).
 
 export async function salvarEquipe(entrada: unknown): Promise<ResultadoAcao> {
   const v = esquemaEquipe.safeParse(entrada);
   if (!v.success) return falha(primeiroErro(v.error));
-  const negado = await garantirSuperAdmin();
+  const negado = await garantirPermissao("cadastros_equipes", v.data.id ? "editar" : "criar");
   if (negado) return negado;
 
   const { id, ...dados } = v.data;
@@ -36,7 +36,7 @@ export async function salvarEquipe(entrada: unknown): Promise<ResultadoAcao> {
 export async function removerEquipe(entrada: unknown): Promise<ResultadoAcao> {
   const v = esquemaId.safeParse(entrada);
   if (!v.success) return falha(primeiroErro(v.error));
-  const negado = await garantirSuperAdmin();
+  const negado = await garantirPermissao("cadastros_equipes", "excluir");
   if (negado) return negado;
   const supabase = await createClient();
   const { error } = await supabase.from("teams").delete().eq("id", v.data.id).select("id").single();
@@ -46,7 +46,7 @@ export async function removerEquipe(entrada: unknown): Promise<ResultadoAcao> {
 export async function adicionarMembroEquipe(entrada: unknown): Promise<ResultadoAcao> {
   const v = esquemaMembroEquipe.safeParse(entrada);
   if (!v.success) return falha(primeiroErro(v.error));
-  const negado = await garantirSuperAdmin();
+  const negado = await garantirPermissao("cadastros_equipes", "editar");
   if (negado) return negado;
   const supabase = await createClient();
   const { error } = await supabase.from("team_members").insert(v.data);
@@ -57,7 +57,7 @@ export async function adicionarMembroEquipe(entrada: unknown): Promise<Resultado
 export async function removerMembroEquipe(entrada: unknown): Promise<ResultadoAcao> {
   const v = esquemaMembroEquipe.safeParse(entrada);
   if (!v.success) return falha(primeiroErro(v.error));
-  const negado = await garantirSuperAdmin();
+  const negado = await garantirPermissao("cadastros_equipes", "editar");
   if (negado) return negado;
   const supabase = await createClient();
   const { error } = await supabase

@@ -2,6 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import type { AcessoMenu } from "@/config/menu";
 import type { UsuarioLogado } from "@/lib/sessao";
 import { COOKIE_MENU_RECOLHIDO } from "@/lib/tema";
 import { cn } from "@/lib/utils";
@@ -17,12 +18,14 @@ export function AppShell({
   dataExtenso,
   recolhidoInicial,
   projetoAtualId,
+  acesso,
   children,
 }: {
   usuario: UsuarioLogado;
   dataExtenso: string;
   recolhidoInicial: boolean;
   projetoAtualId?: string;
+  acesso?: AcessoMenu;
   children: ReactNode;
 }) {
   const [recolhido, setRecolhido] = useState(recolhidoInicial);
@@ -57,13 +60,13 @@ export function AppShell({
             recolhido ? "w-sidebar-recolhida" : "w-sidebar",
           )}
         >
-          <MenuLateral recolhido={recolhido} projetoAtualId={projetoAtualId} onRecolher={alternarRecolhido} />
+          <MenuLateral recolhido={recolhido} projetoAtualId={projetoAtualId} acesso={acesso} onRecolher={alternarRecolhido} />
         </aside>
 
         <Sheet open={gaveta} onOpenChange={setGaveta}>
           <SheetContent side="left" className="w-[280px] max-w-[85vw] border-0 bg-sidebar-bg p-0" showCloseButton={false}>
             <SheetTitle className="sr-only">Menu</SheetTitle>
-            <MenuLateral projetoAtualId={projetoAtualId} onNavegar={() => setGaveta(false)} />
+            <MenuLateral projetoAtualId={projetoAtualId} acesso={acesso} onNavegar={() => setGaveta(false)} />
           </SheetContent>
         </Sheet>
 

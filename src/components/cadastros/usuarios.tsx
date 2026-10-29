@@ -31,6 +31,7 @@ type Usuario = {
   email: string | null;
   telefone_whatsapp: string | null;
   cargo: string | null;
+  perfil: string | null;
   ativo: boolean;
   atende_whatsapp: boolean;
   is_super_admin: boolean;
@@ -52,7 +53,7 @@ const ROTULO_FILTRO: Record<Filtro, string> = {
 
 const CHAVE = ["cadastros", "usuarios"];
 
-export function Usuarios({ superAdmin }: { superAdmin: boolean }) {
+export function Usuarios({ podeEditar, podeDefinirPerfil }: { podeEditar: boolean; podeDefinirPerfil: boolean }) {
   const [busca, setBusca] = useState("");
   const [filtro, setFiltro] = useState<Filtro>("todos");
   const [aberto, setAberto] = useState<string | null>(null);
@@ -63,7 +64,7 @@ export function Usuarios({ superAdmin }: { superAdmin: boolean }) {
       const { data, error } = await createClient()
         .from("profiles")
         .select(
-          "id, nome, email, telefone_whatsapp, cargo, ativo, atende_whatsapp, is_super_admin, organization_id, organizations(nome, nome_fantasia, tipo), team_members(team_id, teams(nome)), project_members(role, ativo, projects(codigo, nome))",
+          "id, nome, email, telefone_whatsapp, cargo, perfil, ativo, atende_whatsapp, is_super_admin, organization_id, organizations(nome, nome_fantasia, tipo), team_members(team_id, teams(nome)), project_members(role, ativo, projects(codigo, nome))",
         )
         .order("nome");
       if (error) throw error;
@@ -74,18 +75,24 @@ export function Usuarios({ superAdmin }: { superAdmin: boolean }) {
     queryKey: ["cadastros", "opcoes-usuario"],
     queryFn: async () => {
       const sb = createClient();
-      const [empresas, equipes] = await Promise.all([
+      const [empresas, equipes, perfis] = await Promise.all([
         sb.from("organizations").select("id, nome, tipo").eq("ativo", true).order("nome"),
         sb.from("teams").select("id, nome").eq("ativo", true).order("nome"),
+        sb.from("perfis").select("chave, nome").neq("chave", "super_admin").order("ordem"),
       ]);
       if (empresas.error) throw empresas.error;
       if (equipes.error) throw equipes.error;
-      return { empresas: (empresas.data ?? []) as Empresa[], equipes: (equipes.data ?? []) as Opcao[] };
+      if (perfis.error) throw perfis.error;
+      return {
+        empresas: (empresas.data ?? []) as Empresa[],
+        equipes: (equipes.data ?? []) as Opcao[],
+        perfis: (perfis.data ?? []) as { chave: string; nome: string }[],
+      };
     },
   });
   const pendentes = useQuery({
     queryKey: [...CHAVE, "convites"],
-    enabled: superAdmin,
+    enabled: podeEditar,
     queryFn: () => executar(convitesPendentesUsuarios()),
     select: (ids) => new Set(ids),
   });
@@ -118,7 +125,7 @@ export function Usuarios({ superAdmin }: { superAdmin: boolean }) {
             </PilulaFiltro>
           ))}
         </div>
-        {superAdmin && (
+        {podeEditar && (
           <Button onClick={() => setAberto("novo")}>
             <Plus aria-hidden="true" />
             Novo usuário
@@ -223,8 +230,10 @@ export function Usuarios({ superAdmin }: { superAdmin: boolean }) {
             usuario={selecionado}
             empresas={opcoes.data?.empresas ?? []}
             equipes={opcoes.data?.equipes ?? []}
+            perfis={opcoes.data?.perfis ?? []}
             convitePendente={!!selecionado && (pendentes.data?.has(selecionado.id) ?? false)}
-            superAdmin={superAdmin}
+            podeEditar={podeEditar}
+            podeDefinirPerfil={podeDefinirPerfil}
             onFechar={() => setAberto(null)}
             onSalvo={(id) => setAberto(id)}
           />
@@ -242,16 +251,20 @@ function FichaUsuario({
   usuario,
   empresas,
   equipes,
+  perfis,
   convitePendente,
-  superAdmin,
+  podeEditar,
+  podeDefinirPerfil,
   onFechar,
   onSalvo,
 }: {
   usuario: Usuario | null;
   empresas: Empresa[];
   equipes: Opcao[];
+  perfis: { chave: string; nome: string }[];
   convitePendente: boolean;
-  superAdmin: boolean;
+  podeEditar: boolean;
+  podeDefinirPerfil: boolean;
   onFechar: () => void;
   onSalvo: (id: string) => void;
 }) {
@@ -272,6 +285,7 @@ function FichaUsuario({
       atende_whatsapp: usuario?.atende_whatsapp ?? false,
       ativo: usuario?.ativo ?? true,
       equipes: usuario?.team_members.map((t) => t.team_id) ?? [],
+      perfil: usuario?.perfil ?? null,
     },
   });
 
@@ -291,7 +305,7 @@ function FichaUsuario({
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const so = !superAdmin;
+  const so = !podeEditar;
   const itensEmpresa = [
     { value: "", label: "Sem empresa" },
     ...empresas.map((e) => ({ value: e.id, label: `${e.nome} · ${ROTULO_TIPO_ORGANIZACAO[e.tipo].toLowerCase()}` })),
@@ -369,6 +383,41 @@ function FichaUsuario({
                 )}
               />
             </div>
+          </div>
+
+          <div className="grid gap-1.5">
+            <Label id="usu-perfil-rotulo">Perfil de acesso</Label>
+            {usuario?.is_super_admin ? (
+              <p className="text-[13px] text-muted-foreground">Super admin: acesso total, sem perfil.</p>
+            ) : (
+              <Controller
+                control={control}
+                name="perfil"
+                render={({ field }) => (
+                  <Select
+                    items={[{ value: "", label: "Sem perfil (só a Página Inicial)" }, ...perfis.map((p) => ({ value: p.chave, label: p.nome }))]}
+                    value={field.value ?? ""}
+                    onValueChange={(v) => field.onChange(v ? v : null)}
+                    disabled={!podeDefinirPerfil}
+                  >
+                    <SelectTrigger className="w-full" aria-labelledby="usu-perfil-rotulo" aria-describedby="usu-perfil-ajuda">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Sem perfil (só a Página Inicial)</SelectItem>
+                      {perfis.map((p) => (
+                        <SelectItem key={p.chave} value={p.chave}>
+                          {p.nome}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+            )}
+            <p id="usu-perfil-ajuda" className="text-[12px] text-muted-foreground">
+              Define os menus e as ações no sistema todo. O papel em cada projeto continua em Acesso por projeto.
+            </p>
           </div>
 
           <div className="grid gap-1.5">
@@ -470,7 +519,7 @@ function FichaUsuario({
           </div>
         )}
 
-        {superAdmin && (
+        {podeEditar && (
           <div className="flex flex-wrap justify-end gap-2 border-t border-border px-4 py-3">
             {usuario && convitePendente && (
               <Button type="button" variant="outline" disabled={mReenviar.isPending} onClick={() => mReenviar.mutate(usuario.id)}>

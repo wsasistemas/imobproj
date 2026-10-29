@@ -3,15 +3,15 @@
 import { esquemaCliente, esquemaContato, esquemaId } from "@/components/cadastros/esquemas";
 import { primeiroErro } from "@/components/cadastros/util";
 import { falha, mensagemErroBanco, sucesso, type ResultadoAcao } from "@/lib/acoes";
-import { garantirSuperAdmin } from "@/lib/cadastros-servidor";
+import { garantirPermissao } from "@/lib/perfil-acesso";
 import { createClient } from "@/lib/supabase/server";
 
-// Cadastros › Clientes: empresas (organizations) e seus contatos. Só o super admin grava (RLS organizations_write).
+// Cadastros › Clientes: empresas (organizations) e seus contatos. O super admin ou quem o perfil autoriza grava (RLS organizations_write).
 
 export async function salvarCliente(entrada: unknown): Promise<ResultadoAcao<string>> {
   const v = esquemaCliente.safeParse(entrada);
   if (!v.success) return falha(primeiroErro(v.error));
-  const negado = await garantirSuperAdmin();
+  const negado = await garantirPermissao("cadastros_clientes", v.data.id ? "editar" : "criar");
   if (negado) return negado;
 
   const { id, ...dados } = v.data;
@@ -29,7 +29,7 @@ export async function salvarCliente(entrada: unknown): Promise<ResultadoAcao<str
 export async function salvarContato(entrada: unknown): Promise<ResultadoAcao> {
   const v = esquemaContato.safeParse(entrada);
   if (!v.success) return falha(primeiroErro(v.error));
-  const negado = await garantirSuperAdmin();
+  const negado = await garantirPermissao("cadastros_clientes", "editar");
   if (negado) return negado;
 
   const { id, ...dados } = v.data;
@@ -50,7 +50,7 @@ export async function salvarContato(entrada: unknown): Promise<ResultadoAcao> {
 export async function removerContato(entrada: unknown): Promise<ResultadoAcao> {
   const v = esquemaId.safeParse(entrada);
   if (!v.success) return falha(primeiroErro(v.error));
-  const negado = await garantirSuperAdmin();
+  const negado = await garantirPermissao("cadastros_clientes", "editar");
   if (negado) return negado;
   const supabase = await createClient();
   const { error } = await supabase.from("organization_contacts").delete().eq("id", v.data.id).select("id").single();

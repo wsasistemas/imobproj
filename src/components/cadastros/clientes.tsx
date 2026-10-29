@@ -66,7 +66,7 @@ function principalDe(e: Empresa) {
   return e.organization_contacts.find((c) => c.principal) ?? e.organization_contacts[0] ?? null;
 }
 
-export function Clientes({ superAdmin }: { superAdmin: boolean }) {
+export function Clientes({ podeEditar }: { podeEditar: boolean }) {
   const [busca, setBusca] = useState("");
   const [situacao, setSituacao] = useState<"ativos" | "inativos">("ativos");
   const [tipo, setTipo] = useState<string>("cliente");
@@ -143,7 +143,7 @@ export function Clientes({ superAdmin }: { superAdmin: boolean }) {
           <Download aria-hidden="true" />
           Exportar Excel
         </Button>
-        {superAdmin && (
+        {podeEditar && (
           <Button onClick={() => setAberto("novo")}>
             <Plus aria-hidden="true" />
             Novo cliente
@@ -191,7 +191,7 @@ export function Clientes({ superAdmin }: { superAdmin: boolean }) {
                 texto={
                   busca
                     ? "Nada corresponde à busca. Confira o nome, o CNPJ ou o contato."
-                    : superAdmin
+                    : podeEditar
                       ? "Cadastre a primeira empresa em “Novo cliente”."
                       : "As empresas aparecem aqui quando o super admin as cadastra."
                 }
@@ -252,7 +252,7 @@ export function Clientes({ superAdmin }: { superAdmin: boolean }) {
             key={aberto}
             empresa={selecionada}
             tipoInicial={tipo === "todos" ? "cliente" : (tipo as TipoOrganizacao)}
-            superAdmin={superAdmin}
+            podeEditar={podeEditar}
             onFechar={() => setAberto(null)}
             onSalvo={(id) => setAberto(id)}
           />
@@ -269,13 +269,13 @@ type SaidaEmpresa = z.output<typeof esquemaFormEmpresa>;
 function FichaEmpresa({
   empresa,
   tipoInicial,
-  superAdmin,
+  podeEditar,
   onFechar,
   onSalvo,
 }: {
   empresa: Empresa | null;
   tipoInicial: TipoOrganizacao;
-  superAdmin: boolean;
+  podeEditar: boolean;
   onFechar: () => void;
   onSalvo: (id: string) => void;
 }) {
@@ -315,7 +315,7 @@ function FichaEmpresa({
     onSettled: () => queryClient.invalidateQueries({ queryKey: CHAVE }),
   });
 
-  const so = !superAdmin;
+  const so = !podeEditar;
   const contatos = [...(empresa?.organization_contacts ?? [])].sort(
     (a, b) => Number(b.principal) - Number(a.principal) || a.nome.localeCompare(b.nome, "pt-BR"),
   );
@@ -402,7 +402,7 @@ function FichaEmpresa({
           <div className="grid gap-3 px-4 pb-4">
             <div className="flex items-center justify-between">
               <RotuloSecao>Contatos</RotuloSecao>
-              {superAdmin && (
+              {podeEditar && (
                 <Button type="button" variant="outline" size="sm" onClick={() => setContatoAberto("novo")}>
                   <Plus aria-hidden="true" />
                   Contato
@@ -427,7 +427,7 @@ function FichaEmpresa({
                       <p className="truncate">{c.email ?? "—"}</p>
                       <p className="tabular-nums">{formatarTelefone(c.telefone_whatsapp) || "—"}</p>
                     </div>
-                    {superAdmin && (
+                    {podeEditar && (
                       <div className="flex shrink-0 gap-0.5">
                         <Button type="button" variant="ghost" size="icon" aria-label={`Editar ${c.nome}`} onClick={() => setContatoAberto(c)}>
                           <Pencil aria-hidden="true" />
@@ -465,7 +465,7 @@ function FichaEmpresa({
           </div>
         )}
 
-        {superAdmin && (
+        {podeEditar && (
           <div className="flex justify-end gap-2 border-t border-border px-4 py-3">
             <Button type="button" variant="outline" onClick={onFechar}>
               Cancelar

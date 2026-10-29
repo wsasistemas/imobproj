@@ -10,6 +10,8 @@ import {
   NotebookPen,
   Settings,
   Building2,
+  KeyRound,
+  ShieldCheck,
   Smartphone,
   UserRound,
   Users,
@@ -23,7 +25,12 @@ import {
 // `colorido`: ícone Fluent Color do Portal Atendimento (src/components/shell/icones-menu.data.ts), que substitui o tile.
 // Telas ainda não implementadas abrem a página "Em construção" (rota coringa).
 
+/** Ações de um perfil de acesso em cada item do menu (imobproj.perfil_permissoes). */
+export const ACOES = ["ver", "criar", "editar", "excluir", "aprovar"] as const;
+export type Acao = (typeof ACOES)[number];
+
 export type ItemMenu = {
+  /** Chave do item; é também a chave em imobproj.perfil_permissoes.menu. */
   id: string;
   label: string;
   href: string;
@@ -35,6 +42,12 @@ export type ItemMenu = {
   /** Subtítulo da página. */
   descricao: string;
   filhos?: ItemMenu[];
+  /** Ações que fazem sentido no item (matriz de Perfis e permissões). Padrão: ver, criar, editar, excluir. */
+  acoes?: readonly Acao[];
+  /** Todo logado vê (não entra na matriz como opção). */
+  sempreVisivel?: boolean;
+  /** Só o super admin vê; nenhum perfil libera. */
+  soSuperAdmin?: boolean;
 };
 
 export type GrupoMenu = { id: string; label: string; itens: ItemMenu[] };
@@ -52,6 +65,8 @@ export const MENU: GrupoMenu[] = [
         icon: House,
         cor: "var(--sys-blue)",
         descricao: "Resumo dos seus projetos, pendências e próximos marcos.",
+        acoes: ["ver"],
+        sempreVisivel: true,
       },
       {
         id: "projetos",
@@ -61,6 +76,7 @@ export const MENU: GrupoMenu[] = [
         icon: FolderKanban,
         cor: "var(--sys-orange)",
         descricao: "Projetos de tecnologia geridos junto com o cliente.",
+        acoes: ACOES,
         filhos: [
           {
             id: "projetos_visao_geral",
@@ -69,6 +85,7 @@ export const MENU: GrupoMenu[] = [
             icon: LayoutDashboard,
             cor: "var(--sys-blue)",
             descricao: "Avanço físico, horas, OS por situação e marcos do projeto.",
+            acoes: ["ver"],
           },
           {
             id: "projetos_documentacao",
@@ -77,6 +94,7 @@ export const MENU: GrupoMenu[] = [
             icon: FileText,
             cor: "var(--sys-indigo)",
             descricao: "Documentos versionados, processos AS-IS/TO-BE e a EAP do projeto.",
+            acoes: ACOES,
           },
           {
             id: "projetos_cronograma",
@@ -85,6 +103,7 @@ export const MENU: GrupoMenu[] = [
             icon: CalendarRange,
             cor: "var(--sys-red)",
             descricao: "Calendário (dia, semana e mês) e Gantt com linha de base.",
+            acoes: ACOES,
           },
           {
             id: "projetos_atas",
@@ -93,6 +112,7 @@ export const MENU: GrupoMenu[] = [
             icon: NotebookPen,
             cor: "var(--sys-purple)",
             descricao: "Participantes, pauta, decisões e encaminhamentos.",
+            acoes: ACOES,
           },
           {
             id: "projetos_os",
@@ -101,6 +121,7 @@ export const MENU: GrupoMenu[] = [
             icon: ClipboardCheck,
             cor: "var(--sys-green)",
             descricao: "Execução, evidências, aceite e medição mensal.",
+            acoes: ACOES,
           },
         ],
       },
@@ -155,9 +176,30 @@ export const MENU: GrupoMenu[] = [
     ],
   },
   {
-    id: "administracao",
-    label: "Administração",
+    id: "configuracoes",
+    label: "Configurações",
     itens: [
+      {
+        id: "config_perfis",
+        colorido: "perfis",
+        label: "Perfis e permissões",
+        href: "/configuracoes/perfis",
+        icon: KeyRound,
+        cor: "var(--sys-indigo)",
+        descricao: "Cada perfil define quais menus a pessoa vê e o que pode fazer em cada um.",
+        soSuperAdmin: true,
+      },
+      {
+        id: "config_aplicativos",
+        colorido: "aplicativos",
+        label: "Permissões por aplicativo",
+        href: "/configuracoes/aplicativos",
+        icon: ShieldCheck,
+        cor: "var(--sys-teal)",
+        descricao:
+          "Cada schema exposto no Supabase é um aplicativo. Escolha quem pode entrar em cada um. O login e a senha continuam os mesmos em todos.",
+        soSuperAdmin: true,
+      },
       {
         id: "admin_whatsapp",
         colorido: "openwa",
@@ -225,4 +267,24 @@ export function projetoDoCaminho(pathname: string): string | undefined {
 export function hrefDoItem(item: ItemMenu, projetoId?: string) {
   if (!item.href.includes(":id")) return item.href;
   return projetoId ? item.href.replace(":id", projetoId) : "/projetos";
+}
+
+/** O que o menu lateral precisa saber do perfil de acesso: super admin vê tudo; os demais, os ids com "ver". */
+export type AcessoMenu = { superAdmin: boolean; visiveis: string[] };
+
+function itemVisivel(item: ItemMenu, acesso: AcessoMenu) {
+  if (acesso.superAdmin) return true;
+  if (item.soSuperAdmin) return false;
+  return Boolean(item.sempreVisivel) || acesso.visiveis.includes(item.id);
+}
+
+/** Menu filtrado pelo perfil: some o item sem "ver", o submenu cujo pai está oculto e o grupo vazio. */
+export function menuVisivel(acesso?: AcessoMenu): GrupoMenu[] {
+  if (!acesso || acesso.superAdmin) return MENU;
+  return MENU.map((grupo) => ({
+    ...grupo,
+    itens: grupo.itens
+      .filter((item) => itemVisivel(item, acesso))
+      .map((item) => (item.filhos ? { ...item, filhos: item.filhos.filter((f) => itemVisivel(f, acesso)) } : item)),
+  })).filter((grupo) => grupo.itens.length > 0);
 }

@@ -3,12 +3,12 @@
 import { esquemaId, esquemaUsuario } from "@/components/cadastros/esquemas";
 import { primeiroErro } from "@/components/cadastros/util";
 import { falha, mensagemErroBanco, sucesso, type ResultadoAcao } from "@/lib/acoes";
-import { garantirSuperAdmin } from "@/lib/cadastros-servidor";
 import { enviarConvite, mensagemErroConvite } from "@/lib/convite";
+import { garantirPermissao, minhasPermissoes } from "@/lib/perfil-acesso";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
-// Cadastros › Usuários: dados da pessoa (profiles), equipes e convite. Só o super admin grava.
+// Cadastros › Usuários: dados da pessoa (profiles), equipes e convite. Grava o super admin ou quem o perfil autoriza.
 // Gravação em profiles/team_members com o cliente da sessão (a RLS confere de novo);
 // service_role só para o Supabase Auth (convite, conta já existente em outro sistema, convite pendente).
 
@@ -37,11 +37,17 @@ export type ResultadoUsuario = { id: string; mensagem: string };
 export async function salvarUsuario(entrada: unknown): Promise<ResultadoAcao<ResultadoUsuario>> {
   const v = esquemaUsuario.safeParse(entrada);
   if (!v.success) return falha(primeiroErro(v.error));
-  const negado = await garantirSuperAdmin();
+  const negado = await garantirPermissao("cadastros_usuarios", v.data.id ? "editar" : "criar");
   if (negado) return negado;
 
-  const { id, email, equipes, ...campos } = v.data;
-  const dados = { ...campos, organization_id: campos.organization_id ?? null };
+  const { id, email, equipes, perfil, ...campos } = v.data;
+  // Perfil de acesso: só o super admin troca (o trigger trg_profiles_protege_perfil confere de novo).
+  const { superAdmin } = await minhasPermissoes();
+  const dados = {
+    ...campos,
+    organization_id: campos.organization_id ?? null,
+    ...(superAdmin && perfil !== undefined ? { perfil } : {}),
+  };
   const supabase = await createClient();
   let userId = id;
   let mensagem = "Usuário salvo.";
@@ -85,7 +91,7 @@ export async function salvarUsuario(entrada: unknown): Promise<ResultadoAcao<Res
 
 /** ids dos usuários que foram convidados e ainda não confirmaram o e-mail. */
 export async function convitesPendentesUsuarios(): Promise<ResultadoAcao<string[]>> {
-  const negado = await garantirSuperAdmin();
+  const negado = await garantirPermissao("cadastros_usuarios", "ver");
   if (negado) return negado;
   const supabase = await createClient();
   const { data, error } = await supabase.from("profiles").select("id");
@@ -102,7 +108,7 @@ export async function convitesPendentesUsuarios(): Promise<ResultadoAcao<string[
 export async function reenviarConviteUsuario(entrada: unknown): Promise<ResultadoAcao<string>> {
   const v = esquemaId.safeParse(entrada);
   if (!v.success) return falha(primeiroErro(v.error));
-  const negado = await garantirSuperAdmin();
+  const negado = await garantirPermissao("cadastros_usuarios", "criar");
   if (negado) return negado;
 
   const supabase = await createClient();
