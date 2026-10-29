@@ -22,6 +22,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { createClient } from "@/lib/supabase/client";
 import type { VarianteSituacao } from "@/lib/projeto/tipos";
 import { DialogSessao } from "./dialog-sessao";
+import { DialogVincularGrupo } from "./dialog-vincular-grupo";
 import type { GrupoLinha, ProjetoNumero, SessaoLinha, StatusSessao } from "./tipos";
 import { CHAVE_ADMIN_WHATSAPP, executar, haQuanto, telefoneFormatado } from "./util";
 
@@ -230,17 +231,27 @@ export function SecaoSessoes() {
 export function SecaoGrupos({ ativo }: { ativo: boolean }) {
   const queryClient = useQueryClient();
   const projetos = useProjetos();
+  const [vinculando, setVinculando] = useState(false);
+  const [filtroProjeto, setFiltroProjeto] = useState("todos");
+  const [filtroNumero, setFiltroNumero] = useState("todos");
   const grupos = useQuery({
     queryKey: [...CHAVE_ADMIN_WHATSAPP, "grupos"],
     queryFn: async () => {
-      const { data, error } = await createClient()
-        .from("wa_groups")
-        .select("id, project_id, session_id, equipe, nome, wa_group_id, ativo, auto_evidencia, auto_os, wa_group_members(count)")
-        .order("nome");
+      const base = "id, project_id, session_id, equipe, nome, wa_group_id, ativo, auto_evidencia, auto_os, wa_group_members(count)";
+      const consulta = (colunas: string) => createClient().from("wa_groups").select(colunas).order("nome");
+      // Com a migration do plano de conversas: equipe do cadastro, número e Anotações. Sem ela, carrega como antes.
+      let { data, error } = await consulta(`${base}, team_id, anotacao_desde, wa_sessions(numero)`);
+      if (error) ({ data, error } = await consulta(base));
       if (error) throw new Error(error.message);
       return (data as unknown as GrupoLinha[] | null) ?? [];
     },
   });
+  const numeros = Array.from(
+    new Map((grupos.data ?? []).filter((g) => g.session_id && g.wa_sessions).map((g) => [g.session_id!, g.wa_sessions!.numero])),
+  );
+  const visiveis = (grupos.data ?? []).filter(
+    (g) => (filtroProjeto === "todos" || g.project_id === filtroProjeto) && (filtroNumero === "todos" || g.session_id === filtroNumero),
+  );
 
   const acao = useMutation({
     mutationFn: ({ tipo, id }: { tipo: "criar" | "sincronizar"; id: string }) =>
@@ -262,21 +273,53 @@ export function SecaoGrupos({ ativo }: { ativo: boolean }) {
         <div className="flex items-center gap-3">
           <IconeMenu icon={Users} cor="var(--sys-blue)" tamanho={36} />
           <div className="grid gap-0.5">
-            <CardTitle>Grupos no WhatsApp</CardTitle>
+            <CardTitle>Grupos e equipes</CardTitle>
             <CardDescription>
-              Cria o grupo no WhatsApp com os participantes cadastrados e mantém a lista em dia. Os grupos e participantes
-              são cadastrados pelo gerente em Conversas.
+              Todo grupo fica preso a um projeto, uma equipe e um número do mesmo projeto. Vincule um grupo que já existe no
+              WhatsApp ou crie pelo portal com os participantes cadastrados em Conversas.
             </CardDescription>
           </div>
         </div>
+        <CardAction className="flex flex-wrap items-center gap-2">
+          <select
+            aria-label="Filtrar grupos por projeto"
+            className="h-9 rounded-md border border-input bg-background px-2 text-[13.5px]"
+            value={filtroProjeto}
+            onChange={(e) => setFiltroProjeto(e.target.value)}
+          >
+            <option value="todos">Todos os projetos</option>
+            {(projetos.data ?? []).map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.codigo}
+              </option>
+            ))}
+          </select>
+          <select
+            aria-label="Filtrar grupos por número"
+            className="h-9 rounded-md border border-input bg-background px-2 text-[13.5px]"
+            value={filtroNumero}
+            onChange={(e) => setFiltroNumero(e.target.value)}
+          >
+            <option value="todos">Todos os números</option>
+            {numeros.map(([id, numero]) => (
+              <option key={id} value={id}>
+                {telefoneFormatado(numero)}
+              </option>
+            ))}
+          </select>
+          <Button onClick={() => setVinculando(true)} disabled={!projetos.data?.length}>
+            <Plus aria-hidden="true" />
+            Vincular grupo
+          </Button>
+        </CardAction>
       </CardHeader>
       <CardContent>
         {grupos.isPending ? (
           <p className="text-[13.5px] text-muted-foreground">Carregando…</p>
         ) : grupos.isError ? (
           <p className="text-[13.5px] text-danger">Não foi possível carregar os grupos.</p>
-        ) : grupos.data.length === 0 ? (
-          <p className="text-[13.5px] text-muted-foreground">Nenhum grupo cadastrado ainda.</p>
+        ) : visiveis.length === 0 ? (
+          <p className="text-[13.5px] text-muted-foreground">Nenhum grupo neste filtro.</p>
         ) : (
           <div className="overflow-x-auto rounded-[10px] border border-border">
             <Table>
@@ -284,6 +327,7 @@ export function SecaoGrupos({ ativo }: { ativo: boolean }) {
                 <TableRow className="bg-table-head">
                   <TableHead>Projeto</TableHead>
                   <TableHead>Grupo</TableHead>
+                  <TableHead>Número</TableHead>
                   <TableHead className="text-right">Participantes</TableHead>
                   <TableHead>WhatsApp</TableHead>
                   <TableHead>Automações</TableHead>
@@ -291,7 +335,7 @@ export function SecaoGrupos({ ativo }: { ativo: boolean }) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {grupos.data.map((g) => {
+                {visiveis.map((g) => {
                   const ocupado = acao.isPending && acao.variables?.id === g.id;
                   return (
                     <TableRow key={g.id}>
@@ -302,7 +346,18 @@ export function SecaoGrupos({ ativo }: { ativo: boolean }) {
                           Equipe {g.equipe}
                           {!g.ativo && " · inativo"}
                         </span>
+                        {g.anotacao_desde && (
+                          <Badge variant="neutral" className="mt-1">
+                            Em Anotações da equipe
+                          </Badge>
+                        )}
+                        {g.team_id === null && "team_id" in g && (
+                          <Badge variant="warning" className="mt-1">
+                            Sem equipe do cadastro
+                          </Badge>
+                        )}
                       </TableCell>
+                      <TableCell className="tabular-nums text-[13px]">{telefoneFormatado(g.wa_sessions?.numero)}</TableCell>
                       <TableCell className="text-right tabular-nums">{g.wa_group_members[0]?.count ?? 0}</TableCell>
                       <TableCell>
                         {g.wa_group_id ? (
@@ -342,6 +397,7 @@ export function SecaoGrupos({ ativo }: { ativo: boolean }) {
         )}
         {!ativo && <p className="mt-2 text-[12.5px] text-muted-foreground">Ligue o OpenWA para criar ou sincronizar grupos.</p>}
       </CardContent>
+      {vinculando && <DialogVincularGrupo projetos={projetos.data ?? []} onFechar={() => setVinculando(false)} />}
     </Card>
   );
 }

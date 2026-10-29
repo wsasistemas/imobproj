@@ -63,10 +63,14 @@ Verificado no local (29/10/2026): "Usar sessão existente" leu as sessões do Op
 
 ## Fase 3 — Grupos e equipes
 
-- [ ] Vincular grupo na ordem Projeto → Número (só do projeto) → Grupo lido do número → Equipe (só do projeto).
-- [ ] Grupo já vinculado aparece desabilitado.
-- [ ] Cadastros › Equipes: campo "Projetos que a equipe atende" (`project_teams`).
-- [ ] Lista de grupos com filtro por número e projeto e situação "Em Anotações da equipe".
+- [x] Vincular grupo na ordem Projeto → Número (só do projeto) → Grupo lido do número → Equipe (só do projeto).
+- [x] Grupo já vinculado aparece desabilitado.
+- [x] Cadastros › Equipes: campo "Projetos que a equipe atende" (`project_teams`).
+- [x] Lista de grupos com filtro por número e projeto e situação "Em Anotações da equipe".
+- [x] Vincular importa os participantes atuais do grupo para `wa_group_members` (sem isso, "Sincronizar" removeria todo mundo do grupo real); se não conseguir ler, desfaz o vínculo.
+- [x] `project_teams` também pode ser gravada por quem edita equipes em Cadastros (perfil `cadastros_equipes`).
+
+Verificado no local (29/10/2026): equipe Suporte técnico ligada ao DEMO-WSA pela tela de Equipes; grupo real "Wsasistemas.ia" lido do número da WSA e vinculado com 2 participantes importados.
 
 ## Fase 4 — Monitor dentro de Conversas
 

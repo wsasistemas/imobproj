@@ -410,11 +410,12 @@ create policy project_teams_select on imobproj.project_teams
     or exists (select 1 from imobproj.team_members tm where tm.team_id = project_teams.team_id and tm.user_id = (select auth.uid()))
   );
 
+-- Escreve o diretor/gerente do projeto ou quem edita equipes em Cadastros (perfil cadastros_equipes).
 drop policy if exists project_teams_write on imobproj.project_teams;
 create policy project_teams_write on imobproj.project_teams
   for all to authenticated
-  using (imobproj.fn_has_role(project_id, array['diretor', 'gerente']))
-  with check (imobproj.fn_has_role(project_id, array['diretor', 'gerente']));
+  using (imobproj.fn_has_role(project_id, array['diretor', 'gerente']) or imobproj.pode('cadastros_equipes', 'editar'))
+  with check (imobproj.fn_has_role(project_id, array['diretor', 'gerente']) or imobproj.pode('cadastros_equipes', 'editar'));
 
 revoke all on imobproj.project_teams from anon;
 grant select, insert, delete on imobproj.project_teams to authenticated;

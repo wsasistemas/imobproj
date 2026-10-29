@@ -295,6 +295,102 @@ export async function qrDaSessao(openwaId: unknown): Promise<ResultadoAcao<Estad
   return sucesso({ status, telefone, qr: q.ok && typeof q.dados?.qrCode === "string" ? q.dados.qrCode : null });
 }
 
+// ---------------------------------------------------------------- vincular grupo existente (Fase 3)
+
+export type GrupoDoNumero = { id: string; nome: string; vinculadoA: string | null };
+
+/** Grupos de WhatsApp em que o número está, marcando os que já têm vínculo (um grupo, um vínculo). */
+export async function gruposDoNumero(sessionId: unknown): Promise<ResultadoAcao<GrupoDoNumero[]>> {
+  if (!z.guid().safeParse(sessionId).success) return falha("Número inválido.");
+  const negado = await garantirSuperAdmin();
+  if (negado) return negado;
+  const supabase = await createClient();
+  const { data: s, error } = await supabase.from("wa_sessions").select("openwa_session_id").eq("id", sessionId as string).maybeSingle();
+  if (error) return falha(mensagemErroBanco(error));
+  const sid = (s as { openwa_session_id: string | null } | null)?.openwa_session_id;
+  if (!sid) return falha("Este número ainda não tem sessão no OpenWA.");
+
+  const r = await chamarOpenwa<{ id?: unknown; name?: unknown }[]>("GET", `/sessions/${encodeURIComponent(sid)}/groups`);
+  if (!r.ok) return r;
+  const { data: ja, error: erroJa } = await supabase.from("wa_groups").select("wa_group_id, nome").not("wa_group_id", "is", null);
+  if (erroJa) return falha(mensagemErroBanco(erroJa));
+  const vinculados = new Map(((ja ?? []) as { wa_group_id: string; nome: string }[]).map((g) => [g.wa_group_id, g.nome]));
+  return sucesso(
+    (Array.isArray(r.dados) ? r.dados : [])
+      .filter((g) => typeof g.id === "string" && g.id.endsWith("@g.us"))
+      .map((g) => ({ id: g.id as string, nome: typeof g.name === "string" && g.name ? g.name : (g.id as string), vinculadoA: vinculados.get(g.id as string) ?? null }))
+      .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR")),
+  );
+}
+
+const esquemaVinculo = z.object({
+  projectId: z.guid("Escolha o projeto."),
+  sessionId: z.guid("Escolha o número."),
+  waGroupId: z.string().trim().regex(/@g\.us$/, "Escolha o grupo do WhatsApp."),
+  nome: z.string().trim().min(1, "Informe o nome do grupo.").max(120),
+  teamId: z.guid("Escolha a equipe."),
+  autoEvidencia: z.boolean(),
+  autoOs: z.boolean(),
+});
+
+/** Liga um grupo que já existe no WhatsApp a projeto + equipe + número (o banco confere que são do mesmo projeto). */
+export async function vincularGrupo(entrada: unknown): Promise<ResultadoAcao<{ id: string }>> {
+  const v = esquemaVinculo.safeParse(entrada);
+  if (!v.success) return falha(primeiroErro(v.error));
+  const negado = await garantirSuperAdmin();
+  if (negado) return negado;
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("wa_groups")
+    .insert({
+      project_id: v.data.projectId,
+      session_id: v.data.sessionId,
+      wa_group_id: v.data.waGroupId,
+      nome: v.data.nome,
+      team_id: v.data.teamId,
+      equipe: "-", // o trigger troca pelo nome da equipe
+      auto_evidencia: v.data.autoEvidencia,
+      auto_os: v.data.autoOs,
+    })
+    .select("id")
+    .single();
+  if (error || !data) {
+    if (error?.code === "23505") return falha("Este grupo já está vinculado a um projeto.");
+    return falha(mensagemErroBanco(error));
+  }
+  const id = (data as { id: string }).id;
+
+  // Importa quem já está no grupo. Sem isso, "Sincronizar" (que tira do WhatsApp quem não está cadastrado)
+  // esvaziaria um grupo que acabou de ser vinculado. Se não der para ler, desfaz o vínculo.
+  const { data: s } = await supabase.from("wa_sessions").select("openwa_session_id").eq("id", v.data.sessionId).maybeSingle();
+  const sid = (s as { openwa_session_id: string | null } | null)?.openwa_session_id ?? "";
+  const lido = await chamarOpenwa<{ participants?: { id?: string; number?: string; isAdmin?: boolean; isSuperAdmin?: boolean }[] }>(
+    "GET",
+    `/sessions/${encodeURIComponent(sid)}/groups/${encodeURIComponent(v.data.waGroupId)}`,
+  );
+  const membros = lido.ok
+    ? (lido.dados?.participants ?? [])
+        .map((p) => ({
+          group_id: id,
+          telefone: String(p.number ?? p.id ?? "").replace(/\D/g, ""),
+          is_admin: !!(p.isAdmin || p.isSuperAdmin),
+        }))
+        .filter((m) => m.telefone.length >= 8)
+    : null;
+  const erroMembros = membros?.length
+    ? (await supabase.from("wa_group_members").upsert(membros, { onConflict: "group_id,telefone", ignoreDuplicates: true })).error
+    : null;
+  if (!membros || erroMembros) {
+    await supabase.from("wa_groups").delete().eq("id", id);
+    return falha(
+      !lido.ok
+        ? `Não foi possível ler os participantes do grupo no OpenWA (${lido.erro}). Nada foi vinculado.`
+        : `Não foi possível gravar os participantes (${mensagemErroBanco(erroMembros)}). Nada foi vinculado.`,
+    );
+  }
+  return sucesso({ id });
+}
+
 // ---------------------------------------------------------------- sessões
 
 const esquemaSessao = z.object({

@@ -98,4 +98,5 @@ export const esquemaEquipe = z.object({
 export type EquipeEntrada = z.input<typeof esquemaEquipe>;
 
 export const esquemaMembroEquipe = z.object({ team_id: id, user_id: id });
+export const esquemaProjetoEquipe = z.object({ team_id: id, project_id: id });
 export const esquemaId = z.object({ id });

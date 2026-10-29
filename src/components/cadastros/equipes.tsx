@@ -2,12 +2,19 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, MoreHorizontal, Pencil, Plus, Trash2, UserMinus } from "lucide-react";
+import { FolderKanban, Loader2, MoreHorizontal, Pencil, Plus, Trash2, UserMinus, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import type { z } from "zod";
-import { adicionarMembroEquipe, removerEquipe, removerMembroEquipe, salvarEquipe } from "@/app/(app)/cadastros/equipes/acoes";
+import {
+  adicionarMembroEquipe,
+  adicionarProjetoEquipe,
+  removerEquipe,
+  removerMembroEquipe,
+  removerProjetoEquipe,
+  salvarEquipe,
+} from "@/app/(app)/cadastros/equipes/acoes";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -39,7 +46,10 @@ type Equipe = {
   setor: string | null;
   lider_id: string | null;
   team_members: { user_id: string; profiles: Pessoa | null }[];
+  /** Ausente enquanto a migration de project_teams não chegou ao banco. */
+  project_teams?: { project_id: string }[];
 };
+type Projeto = { id: string; codigo: string; nome: string };
 
 const CHAVE = ["cadastros", "equipes"];
 
@@ -51,11 +61,11 @@ export function Equipes({ podeEditar }: { podeEditar: boolean }) {
   const equipes = useQuery({
     queryKey: CHAVE,
     queryFn: async () => {
-      const { data, error } = await createClient()
-        .from("teams")
-        .select("id, nome, setor, lider_id, team_members(user_id, profiles(id, nome, email, cargo))")
-        .eq("ativo", true)
-        .order("nome");
+      const base = "id, nome, setor, lider_id, team_members(user_id, profiles(id, nome, email, cargo))";
+      const consulta = (colunas: string) => createClient().from("teams").select(colunas).eq("ativo", true).order("nome");
+      // Com project_teams (plano de conversas): projetos que a equipe atende. Sem a tabela, carrega como antes.
+      let { data, error } = await consulta(`${base}, project_teams(project_id)`);
+      if (error) ({ data, error } = await consulta(base));
       if (error) throw error;
       return (data ?? []) as unknown as Equipe[];
     },
@@ -69,6 +79,14 @@ export function Equipes({ podeEditar }: { podeEditar: boolean }) {
       return (data ?? []) as { id: string; nome: string }[];
     },
     retry: false,
+  });
+  const projetos = useQuery({
+    queryKey: ["cadastros", "projetos-opcoes"],
+    queryFn: async () => {
+      const { data, error } = await createClient().from("projects").select("id, codigo, nome").order("codigo");
+      if (error) throw error;
+      return (data ?? []) as Projeto[];
+    },
   });
   const pessoas = useQuery({
     queryKey: ["cadastros", "pessoas-ativas"],
@@ -92,6 +110,17 @@ export function Equipes({ podeEditar }: { podeEditar: boolean }) {
   const mTirar = useMutation({
     mutationFn: (v: { team_id: string; user_id: string }) => executar(removerMembroEquipe(v)),
     onSuccess: () => toast.success("Pessoa retirada da equipe."),
+    onError: (e: Error) => toast.error(e.message),
+    onSettled: invalidar,
+  });
+  const mProjeto = useMutation({
+    mutationFn: (v: { team_id: string; project_id: string; ligar: boolean }) =>
+      executar(
+        v.ligar
+          ? adicionarProjetoEquipe({ team_id: v.team_id, project_id: v.project_id })
+          : removerProjetoEquipe({ team_id: v.team_id, project_id: v.project_id }),
+      ),
+    onSuccess: (_, v) => toast.success(v.ligar ? "Projeto incluído na equipe." : "Projeto retirado da equipe."),
     onError: (e: Error) => toast.error(e.message),
     onSettled: invalidar,
   });
@@ -128,8 +157,11 @@ export function Equipes({ podeEditar }: { podeEditar: boolean }) {
             key={eq.id}
             equipe={eq}
             pessoas={pessoas.data ?? []}
+            projetos={projetos.data ?? []}
             podeEditar={podeEditar}
             adicionando={mAdicionar.isPending && mAdicionar.variables?.team_id === eq.id}
+            mudandoProjeto={mProjeto.isPending && mProjeto.variables?.team_id === eq.id}
+            onProjeto={(project_id, ligar) => mProjeto.mutate({ team_id: eq.id, project_id, ligar })}
             onAdicionar={(user_id) => mAdicionar.mutate({ team_id: eq.id, user_id })}
             onTirar={(user_id) => mTirar.mutate({ team_id: eq.id, user_id })}
             onEditar={() => setEditando(eq)}
@@ -171,8 +203,11 @@ export function Equipes({ podeEditar }: { podeEditar: boolean }) {
 function CartaoEquipe({
   equipe,
   pessoas,
+  projetos,
   podeEditar,
   adicionando,
+  mudandoProjeto,
+  onProjeto,
   onAdicionar,
   onTirar,
   onEditar,
@@ -180,8 +215,11 @@ function CartaoEquipe({
 }: {
   equipe: Equipe;
   pessoas: Pessoa[];
+  projetos: Projeto[];
   podeEditar: boolean;
   adicionando: boolean;
+  mudandoProjeto: boolean;
+  onProjeto: (projectId: string, ligar: boolean) => void;
   onAdicionar: (userId: string) => void;
   onTirar: (userId: string) => void;
   onEditar: () => void;
@@ -196,6 +234,9 @@ function CartaoEquipe({
   );
   const fora = pessoas.filter((p) => !membros.some((m) => m.id === p.id));
   const itensFora = fora.map((p) => ({ value: p.id, label: p.nome || p.email || "Sem nome" }));
+  const ligados = new Set((equipe.project_teams ?? []).map((x) => x.project_id));
+  const atende = projetos.filter((p) => ligados.has(p.id));
+  const itensProjetos = projetos.filter((p) => !ligados.has(p.id)).map((p) => ({ value: p.id, label: `${p.codigo} · ${p.nome}` }));
 
   return (
     <Card className="min-w-0 gap-0 p-0">
@@ -259,6 +300,52 @@ function CartaoEquipe({
             );
           })}
         </ul>
+      )}
+      {equipe.project_teams && (
+        <div className="grid gap-2 border-t border-border-soft px-4 py-3">
+          <p className="flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+            <FolderKanban className="size-3.5" aria-hidden="true" />
+            Projetos que atende
+          </p>
+          {atende.length === 0 ? (
+            <p className="text-[12.5px] text-muted-foreground">Nenhum. Os grupos de WhatsApp só aceitam equipes ligadas ao projeto.</p>
+          ) : (
+            <ul className="flex flex-wrap gap-1.5">
+              {atende.map((p) => (
+                <li key={p.id}>
+                  <Badge variant="info" className="gap-1">
+                    {p.codigo}
+                    {podeEditar && (
+                      <button
+                        type="button"
+                        className="rounded-sm hover:text-danger"
+                        aria-label={`Tirar o projeto ${p.codigo} da equipe ${equipe.nome}`}
+                        disabled={mudandoProjeto}
+                        onClick={() => onProjeto(p.id, false)}
+                      >
+                        <X className="size-3" aria-hidden="true" />
+                      </button>
+                    )}
+                  </Badge>
+                </li>
+              ))}
+            </ul>
+          )}
+          {podeEditar && itensProjetos.length > 0 && (
+            <Select items={itensProjetos} value={null} onValueChange={(v) => v && onProjeto(v, true)} disabled={mudandoProjeto}>
+              <SelectTrigger size="sm" className="w-[220px]" aria-label={`Incluir projeto na equipe ${equipe.nome}`}>
+                <SelectValue placeholder="+ Incluir projeto" />
+              </SelectTrigger>
+              <SelectContent>
+                {itensProjetos.map((i) => (
+                  <SelectItem key={i.value} value={i.value}>
+                    {i.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        </div>
       )}
       <div className="flex items-center justify-between gap-2 border-t border-border-soft px-4 py-3">
         {podeEditar && itensFora.length > 0 ? (

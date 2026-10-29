@@ -48,6 +48,10 @@ export type GrupoLinha = {
   auto_evidencia: boolean;
   auto_os: boolean;
   wa_group_members: { count: number }[];
+  /** Colunas do plano de conversas (ausentes antes da migration 20261101000100). */
+  team_id?: string | null;
+  anotacao_desde?: string | null;
+  wa_sessions?: { numero: string } | null;
 };
 
 export type ResultadoGrupo = {

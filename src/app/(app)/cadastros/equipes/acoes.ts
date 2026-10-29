@@ -1,6 +1,6 @@
 "use server";
 
-import { esquemaEquipe, esquemaId, esquemaMembroEquipe } from "@/components/cadastros/esquemas";
+import { esquemaEquipe, esquemaId, esquemaMembroEquipe, esquemaProjetoEquipe } from "@/components/cadastros/esquemas";
 import { primeiroErro } from "@/components/cadastros/util";
 import { falha, mensagemErroBanco, sucesso, type ResultadoAcao } from "@/lib/acoes";
 import { garantirPermissao } from "@/lib/perfil-acesso";
@@ -51,6 +51,41 @@ export async function adicionarMembroEquipe(entrada: unknown): Promise<Resultado
   const supabase = await createClient();
   const { error } = await supabase.from("team_members").insert(v.data);
   if (error?.code === "23505") return falha("Esta pessoa já está na equipe.");
+  return error ? falha(mensagemErroBanco(error)) : sucesso(undefined);
+}
+
+/** Liga a equipe a um projeto que ela atende (project_teams). Os grupos do WhatsApp do projeto só aceitam essas equipes. */
+export async function adicionarProjetoEquipe(entrada: unknown): Promise<ResultadoAcao> {
+  const v = esquemaProjetoEquipe.safeParse(entrada);
+  if (!v.success) return falha(primeiroErro(v.error));
+  const negado = await garantirPermissao("cadastros_equipes", "editar");
+  if (negado) return negado;
+  const supabase = await createClient();
+  const { error } = await supabase.from("project_teams").insert(v.data);
+  if (error?.code === "23505") return falha("A equipe já atende este projeto.");
+  return error ? falha(mensagemErroBanco(error)) : sucesso(undefined);
+}
+
+export async function removerProjetoEquipe(entrada: unknown): Promise<ResultadoAcao> {
+  const v = esquemaProjetoEquipe.safeParse(entrada);
+  if (!v.success) return falha(primeiroErro(v.error));
+  const negado = await garantirPermissao("cadastros_equipes", "editar");
+  if (negado) return negado;
+  const supabase = await createClient();
+  const { count, error: erroGrupos } = await supabase
+    .from("wa_groups")
+    .select("id", { count: "exact", head: true })
+    .eq("project_id", v.data.project_id)
+    .eq("team_id", v.data.team_id);
+  if (erroGrupos) return falha(mensagemErroBanco(erroGrupos));
+  if (count) return falha(`A equipe tem ${count} grupo(s) de WhatsApp neste projeto. Troque a equipe desses grupos antes.`);
+  const { error } = await supabase
+    .from("project_teams")
+    .delete()
+    .eq("team_id", v.data.team_id)
+    .eq("project_id", v.data.project_id)
+    .select("team_id")
+    .single();
   return error ? falha(mensagemErroBanco(error)) : sucesso(undefined);
 }
 
