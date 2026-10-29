@@ -25,7 +25,8 @@ insert into imobproj._demo_perfil_permissoes select * from imobproj.perfil_permi
 
 -- Apaga todos os dados do IMOBPROJ e recria os fictícios a partir de imobproj._demo_seed.
 -- Perfis e permissões voltam ao retrato acima; configurações e OpenWA voltam ao padrão das migrations
--- (o seed ajusta as configurações). Tabelas internas (nome começando com "_") ficam intactas.
+-- (o seed ajusta as configurações). Tabelas internas (nome começando com "_") e o conteúdo dos tutoriais
+-- (tr_trilhas, tr_modulos, tr_passos...) ficam intactos; o progresso de cada pessoa no treinamento é apagado.
 -- Quem chama precisa ser o super admin da demo; sem usuário (script com a role postgres), passa.
 create or replace function imobproj.demo_restaurar()
 returns void
@@ -59,7 +60,10 @@ begin
     join pg_namespace n on n.oid = c.relnamespace
    where n.nspname = 'imobproj'
      and c.relkind in ('r', 'p')
-     and c.relname not like '\_%';
+     and c.relname not like '\_%'
+     -- Conteúdo do Centro de Treinamento (carga da migration 20261031000700): fica. O progresso (tr_progresso)
+     -- sai junto com os perfis das pessoas (on delete cascade / truncate cascade).
+     and c.relname not in ('tr_trilhas', 'tr_trilha_perfis', 'tr_modulos', 'tr_trilha_modulos', 'tr_passos');
 
   execute 'truncate ' || v_tabelas || ' restart identity cascade';
 

@@ -1,0 +1,352 @@
+// Centro de Treinamento: conteúdo dos tutoriais (trilhas, módulos, balões) e as telas que o script de captura fotografa.
+// Fonte única: scripts/capturar-treinamento.mjs captura as TELAS e mede os ALVOS (bounding box do seletor, em %);
+// scripts/gerar-carga-treinamento.mjs junta este arquivo com scripts/treinamento/alvos.json e escreve a carga
+// na migration 20261031000700_treinamento.sql. Mudou um texto? Rode o gerador. Mudou uma tela? Rode a captura e o gerador.
+//
+// Alvo de um balão: { sel } é um seletor do Playwright dentro da tela; { card: true } contorna o cartão
+// ([data-slot=card]) que contém o elemento. Telas do celular vêm dos mockups aprovados (o app Expo não roda no navegador).
+
+/** Projeto fictício da demo (supabase/demo/seed-demo.sql). */
+export const PROJETO = "c0000000-0000-0000-0000-000000000014";
+
+/**
+ * Telas capturadas. desktop: portal em modo demo (1440×900), entrando pelo perfil do "Entrar como".
+ * celular: elemento `.tela` do mockup (deviceScaleFactor 2). `passos`: rota, clique (texto/seletor) e rolagem.
+ */
+export const TELAS = [
+  // Gerente de projetos
+  { tela: "g-visao", perfil: "Gerente", rota: "/projetos/:p" },
+  { tela: "g-docs", perfil: "Gerente", rota: "/projetos/:p/documentacao" },
+  { tela: "g-eap", perfil: "Gerente", rota: "/projetos/:p/documentacao", clicar: ["main button:text-is('EAP')"] },
+  { tela: "g-gantt", perfil: "Gerente", rota: "/projetos/:p/cronograma", clicar: ["main button:text-is('Gantt')"] },
+  { tela: "g-os", perfil: "Gerente", rota: "/projetos/:p/os" },
+  { tela: "g-os-det", perfil: "Gerente", rota: "/projetos/:p/os", clicar: ["button[aria-label^='Abrir OS 237']"] },
+  { tela: "g-atas", perfil: "Gerente", rota: "/projetos/:p/atas", clicar: ["main button:has-text('Revisão do protótipo')"] },
+  { tela: "g-medicao", perfil: "Gerente", rota: "/projetos/:p/os/medicao", clicar: ["button[aria-label='Mês anterior']"] },
+  { tela: "g-clientes", perfil: "Gerente", rota: "/cadastros/clientes" },
+  { tela: "g-usuarios", perfil: "Gerente", rota: "/cadastros/usuarios" },
+  // Atendente
+  { tela: "a-monitor", perfil: "Atendente", rota: "/atendimento/monitor" },
+  { tela: "a-fila", perfil: "Atendente", rota: "/atendimento/monitor", rolar: 700 },
+  { tela: "a-transferir", perfil: "Atendente", rota: "/atendimento/monitor", rolar: 700, clicar: ["main button:has-text('Abrir / transferir')"] },
+  { tela: "a-conversas", perfil: "Atendente", rota: "/projetos/:p/conversas" },
+  { tela: "a-conversa", perfil: "Atendente", rota: "/projetos/:p/conversas", clicar: ["main a:has-text('Beta Logística · Implantação')"] },
+  // Usuário-chave (cliente)
+  { tela: "c-visao", perfil: "Usuário-chave", rota: "/projetos/:p" },
+  { tela: "c-os", perfil: "Usuário-chave", rota: "/projetos/:p/os", clicar: ["main button:has-text('Aguardando aceite')"] },
+  { tela: "c-os-aceite", perfil: "Usuário-chave", rota: "/projetos/:p/os", clicar: ["button[aria-label^='Abrir OS 233']"] },
+  { tela: "c-atas", perfil: "Usuário-chave", rota: "/projetos/:p/atas", clicar: ["main button:has-text('Revisão do protótipo')"] },
+  // App de OS (celular): telas dos mockups aprovados
+  { tela: "app-login", mockup: "docs/mockups/app-campo.html", celula: ".grade figure:nth-of-type(1) .tela" },
+  { tela: "app-hoje", mockup: "docs/mockups/app-campo.html", celula: ".grade figure:nth-of-type(2) .tela" },
+  { tela: "app-os", mockup: "docs/mockups/app-campo.html", celula: ".grade figure:nth-of-type(3) .tela" },
+  { tela: "app-assinatura", mockup: "docs/mockups/app-campo.html", celula: ".grade figure:nth-of-type(4) .tela" },
+  { tela: "app-perfil", mockup: "docs/mockups/app-campo.html", celula: ".grade figure:nth-of-type(8) .tela" },
+  { tela: "app-nova", mockup: "docs/mockups/implantacao-final.html#app", celula: "[data-sec='app'] .cels .cel:nth-of-type(1) .tela" },
+];
+
+export const TRILHAS = [
+  { codigo: "gerente", nome: "Gestão de Projetos", descricao: "Planejar, acompanhar e aprovar o trabalho dos seus projetos.", padrao: false,
+    perfis: ["gerente", "super_admin"], modulos: ["g1", "g2", "g3", "g4", "g5", "g6"] },
+  { codigo: "tecnico", nome: "App de OS", descricao: "Executar as OS no celular: check-in, evidências e check-out, mesmo sem internet.", padrao: false,
+    perfis: ["analista", "prestador"], modulos: ["t1", "t2", "t3", "t4"] },
+  { codigo: "atendente", nome: "Atendimento", descricao: "Atender os clientes no WhatsApp com a fila do seu setor.", padrao: false,
+    perfis: ["atendente"], modulos: ["a1", "a2", "a3"] },
+  // Padrão: quem não tem perfil com trilha (e o perfil usuário-chave) segue esta.
+  { codigo: "cliente", nome: "Acompanhamento do cliente", descricao: "Acompanhar o projeto, aprovar as OS e ler as atas.", padrao: true,
+    perfis: ["usuario_chave"], modulos: ["c1", "c2", "c3"] },
+];
+
+const card = (sel) => ({ sel, card: true });
+
+export const MODULOS = [
+  // ------------------------------------------------------------------ Gerente de projetos
+  {
+    codigo: "g1", titulo: "Visão geral do projeto", papel: "gerencia", minutos: 4, rotaDemo: "/projetos/:p",
+    descricao: "Avanço, horas, OS e pendências de atas num painel só, para começar o dia.",
+    pergunta: "Onde você vê, de relance, as OS que esperam o aceite do cliente?",
+    opcoes: ["No cartão Ordens de Serviço da visão geral", "Na aba Cronograma", "Em Configurações gerais"], resposta: 0,
+    baloes: [
+      { tela: "g-visao", titulo: "As abas do projeto", alvo: { sel: "nav[aria-label='Seções do projeto']" },
+        texto: "Todo projeto tem as mesmas abas: visão geral, documentação e EAP, cronograma, atas, OS e conversas. Comece sempre por aqui." },
+      { tela: "g-visao", titulo: "Avanço físico", alvo: card("h2:text-is('Avanço físico')"),
+        texto: "Quanto do projeto já foi entregue, calculado pelas atividades da EAP e pelas OS aprovadas." },
+      { tela: "g-visao", titulo: "Horas apontadas", alvo: card("h2:text-is('Horas apontadas')"),
+        texto: "As horas das OS aprovadas comparadas com as horas orçadas. Acima do orçado, o número fica em alerta." },
+      { tela: "g-visao", titulo: "Ordens de Serviço", alvo: card("h2:text-is('Ordens de Serviço')"),
+        texto: "Quantas OS estão em cada situação. Ver OS abre a lista já filtrada." },
+      { tela: "g-visao", titulo: "Pendências de atas", alvo: card("h2:text-is('Pendências de atas')"),
+        texto: "Encaminhamentos das reuniões que ainda estão abertos, com o responsável e o prazo." },
+      { tela: "g-visao", titulo: "Pessoas envolvidas", alvo: card("h2:text-is('Pessoas envolvidas')"),
+        texto: "Quem participa do projeto e com qual papel: diretor, gerente, usuário-chave e analistas." },
+    ],
+  },
+  {
+    codigo: "g2", titulo: "EAP e cronograma", papel: "gerencia", minutos: 6, rotaDemo: "/projetos/:p/documentacao",
+    descricao: "Documentos, a estrutura analítica com horas e datas, e o Gantt com a linha de base.",
+    pergunta: "Como você muda as horas orçadas de uma atividade?",
+    opcoes: ["Clicando no valor da linha, na EAP", "Arrastando a barra no Gantt", "Em Configurações gerais"], resposta: 0,
+    baloes: [
+      { tela: "g-docs", titulo: "Documentação do projeto", alvo: { sel: "main table" },
+        texto: "Termo de abertura, escopo, processos e requisitos, cada um com versão e situação. Clique no título para abrir." },
+      { tela: "g-docs", titulo: "Enviar documento", alvo: { sel: "main button:has-text('Enviar documento')" },
+        texto: "Suba um documento novo ou uma versão nova de um que já existe. O histórico de versões fica guardado." },
+      { tela: "g-eap", titulo: "A EAP", alvo: { sel: "main button:text-is('EAP')" },
+        texto: "A estrutura analítica divide o projeto em fases e atividades, cada uma com responsável, horas e datas." },
+      { tela: "g-eap", titulo: "Edite direto na linha", alvo: { sel: "main button:has-text('Editar horas orçadas de 1.1')" },
+        texto: "Clique no título, no responsável, nas horas ou nas datas para editar ali mesmo, sem abrir outra tela." },
+      { tela: "g-eap", titulo: "Importar planilha", alvo: { sel: "main button:has-text('Importar planilha')" },
+        texto: "Já tem a EAP no Excel? Baixe o modelo, preencha e importe tudo de uma vez." },
+      { tela: "g-gantt", titulo: "Gantt", alvo: { sel: "main button:text-is('Gantt')" },
+        texto: "O Gantt mostra as mesmas atividades da EAP no tempo, com as dependências entre elas." },
+      { tela: "g-gantt", titulo: "Linha de base", alvo: { sel: "main button:has-text('Nova linha de base')" },
+        texto: "Congele o planejamento aprovado para comparar depois o previsto com o realizado." },
+    ],
+  },
+  {
+    codigo: "g3", titulo: "Abrir e aprovar uma OS", papel: "gerencia", minutos: 6, rotaDemo: "/projetos/:p/os",
+    descricao: "Da abertura ao aceite do cliente, com evidências, histórico e horas.",
+    pergunta: "Quem aprova uma OS que foi enviada para aceite?",
+    opcoes: ["O usuário-chave do cliente", "O próprio técnico", "Ninguém: ela é aprovada na hora"], resposta: 0,
+    baloes: [
+      { tela: "g-os", titulo: "Nova OS", alvo: { sel: "main button:has-text('Nova OS')" },
+        texto: "Abra uma OS para uma atividade da EAP: título, executor, data e horário. O técnico também pode abrir pelo celular." },
+      { tela: "g-os", titulo: "Situações", alvo: { sel: "main button:has-text('Aguardando aceite')" },
+        texto: "As pílulas filtram a lista. Aguardando aceite são as OS executadas que esperam o cliente." },
+      { tela: "g-os", titulo: "A lista de OS", alvo: { sel: "main table" },
+        texto: "Número, atividade da EAP, executor, data e horas de cada OS. Clique no título para abrir o detalhe." },
+      { tela: "g-os-det", titulo: "Detalhe da OS", alvo: { sel: "[role=dialog] h3:text-is('Dados')" },
+        texto: "Os dados da OS: projeto, atividade, executor, horário agendado, check-in e check-out." },
+      { tela: "g-os-det", titulo: "Evidências", alvo: { sel: "[role=dialog] button:has-text('Enviar evidência')" },
+        texto: "Fotos, prints, arquivos e a assinatura do cliente. Pelo app, o técnico envia direto do celular." },
+      { tela: "g-os-det", titulo: "Histórico", alvo: { sel: "[role=dialog] h3:text-is('Histórico')" },
+        texto: "Quem fez cada passo e quando: agendou, iniciou, enviou para aceite, aprovou ou recusou." },
+      { tela: "g-os", titulo: "Medição do mês", alvo: { sel: "main a:has-text('Medição do mês')" },
+        texto: "Depois de aprovadas, as horas entram na medição do mês, pronta para conferir e faturar." },
+    ],
+  },
+  {
+    codigo: "g4", titulo: "Atas de reunião", papel: "gerencia", minutos: 5, rotaDemo: "/projetos/:p/atas",
+    descricao: "Registrar a ata, os presentes e as decisões, e enviar no grupo do projeto.",
+    pergunta: "Como os participantes confirmam que leram a ata?",
+    opcoes: ["Pela ciência, pedida na própria ata", "Respondendo um e-mail", "Assinando o PDF à mão"], resposta: 0,
+    baloes: [
+      { tela: "g-atas", titulo: "Nova ata", alvo: { sel: "main button:has-text('Nova ata')" },
+        texto: "Comece uma ata nova a partir da reunião: título, data, horário e pauta." },
+      { tela: "g-atas", titulo: "As atas do projeto", alvo: { sel: "main button:has-text('Revisão do protótipo') >> nth=0" },
+        texto: "Numeradas e em ordem, cada uma com a situação: rascunho, publicada ou aprovada." },
+      { tela: "g-atas", titulo: "Participantes", alvo: { sel: "main table:has(th:has-text('Presença'))" },
+        texto: "Marque quem estava presente. A coluna Ciência mostra quem já leu e concordou." },
+      { tela: "g-atas", titulo: "Enviar ao grupo", alvo: { sel: "main button:has-text('Enviar ao grupo WhatsApp')" },
+        texto: "Manda o resumo da ata para o grupo do projeto no WhatsApp." },
+      { tela: "g-atas", titulo: "PDF e ciência", alvo: { sel: "main button:has-text('Solicitar ciência')" },
+        texto: "Peça a ciência dos participantes e gere o PDF para arquivar ou mandar por e-mail." },
+    ],
+  },
+  {
+    codigo: "g5", titulo: "Medição do mês", papel: "gerencia", minutos: 4, rotaDemo: "/projetos/:p/os/medicao",
+    descricao: "As horas das OS aprovadas no mês, por pessoa e por prestador, prontas para exportar.",
+    pergunta: "Quais OS entram na medição do mês?",
+    opcoes: ["As aprovadas no mês", "Todas as agendadas", "Só as recusadas"], resposta: 0,
+    baloes: [
+      { tela: "g-medicao", titulo: "Escolha o mês", alvo: { sel: "button[aria-label='Mês anterior']" },
+        texto: "Navegue pelos meses. A medição soma só as OS aprovadas no mês escolhido." },
+      { tela: "g-medicao", titulo: "Por pessoa", alvo: { sel: "main table:has(th:text-is('Pessoa'))" },
+        texto: "Horas de cada pessoa e de qual prestador ela é." },
+      { tela: "g-medicao", titulo: "Por prestador", alvo: { sel: "main table:has(th:text-is('Pessoas'))" },
+        texto: "O total por prestador, para conferir com a nota fiscal." },
+      { tela: "g-medicao", titulo: "As OS do mês", alvo: { sel: "main table:has(th:has-text('Aprovada em'))" },
+        texto: "Cada OS aprovada, com a data do aceite e as horas." },
+      { tela: "g-medicao", titulo: "Exportar", alvo: { sel: "main button:has-text('Exportar .xlsx')" },
+        texto: "Baixe a medição em Excel para mandar ao financeiro." },
+    ],
+  },
+  {
+    codigo: "g6", titulo: "Cadastros de clientes e usuários", papel: "gerencia", minutos: 5, rotaDemo: "/cadastros/clientes",
+    descricao: "Empresas atendidas, contatos, pessoas da equipe e o papel de cada uma nos projetos.",
+    pergunta: "Onde você define que alguém é usuário-chave de um projeto?",
+    opcoes: ["Em Usuários, na aba Acesso por projeto", "Em Clientes", "No cronograma"], resposta: 0,
+    baloes: [
+      { tela: "g-clientes", titulo: "Novo cliente", alvo: { sel: "main button:has-text('Novo cliente')" },
+        texto: "Cadastre a empresa com CNPJ, contatos e WhatsApp. Ela passa a aparecer nos projetos." },
+      { tela: "g-clientes", titulo: "Os clientes", alvo: { sel: "main table" },
+        texto: "Contato principal, WhatsApp, projetos e situação de cada cliente. Clique no nome para abrir a ficha." },
+      { tela: "g-clientes", titulo: "Ativos e inativos", alvo: { sel: "main button:has-text('Ativos ·')" },
+        texto: "Cliente inativo sai das listas de escolha, mas o histórico continua." },
+      { tela: "g-usuarios", titulo: "Acesso por projeto", alvo: { sel: "main a:has-text('Acesso por projeto')" },
+        texto: "Aqui você define o papel de cada pessoa em cada projeto: gerente, analista, usuário-chave ou prestador." },
+      { tela: "g-usuarios", titulo: "Grupos de pessoas", alvo: { sel: "main button:has-text('Equipe interna')" },
+        texto: "Separe a equipe interna, os contatos dos clientes e os prestadores." },
+      { tela: "g-usuarios", titulo: "Os usuários", alvo: { sel: "main table" },
+        texto: "Nome, e-mail, WhatsApp, cargo, empresa e equipes. Clique no nome para editar ou reenviar o convite." },
+    ],
+  },
+
+  // ------------------------------------------------------------------ Técnico de campo (app de OS)
+  {
+    codigo: "t1", titulo: "Hoje e check-in", papel: "campo", minutos: 4, rotaDemo: "/", celular: true,
+    descricao: "Entrar no app, ver as OS do dia e fazer o check-in com hora e GPS.",
+    pergunta: "O que o check-in grava?",
+    opcoes: ["A hora e a localização (GPS)", "Só uma foto", "A assinatura do cliente"], resposta: 0,
+    baloes: [
+      { tela: "app-login", titulo: "Entre no app", alvo: { sel: ".folha" },
+        texto: "Use o mesmo e-mail e a mesma senha do portal. Depois do primeiro acesso, dá para entrar com a digital ou o Face ID." },
+      { tela: "app-hoje", titulo: "As OS de hoje", alvo: { sel: ".cartao >> nth=0" },
+        texto: "A tela Hoje lista as suas OS do dia, com horário, local e situação." },
+      { tela: "app-hoje", titulo: "Fazer check-in", alvo: { sel: ".btn.p >> nth=0" },
+        texto: "Ao chegar no cliente, toque em Fazer check-in. O app grava a hora e a localização." },
+      { tela: "app-hoje", titulo: "Sincronizado", alvo: { sel: ".selo-fila" },
+        texto: "Mostra se está tudo enviado. Sem internet, o que você registra fica guardado e sobe depois." },
+    ],
+  },
+  {
+    codigo: "t2", titulo: "Evidências e assinatura", papel: "campo", minutos: 5, rotaDemo: "/", celular: true,
+    descricao: "Fotos com marca d'água, arquivos, prints e a assinatura do cliente na tela.",
+    pergunta: "Onde o cliente assina a OS?",
+    opcoes: ["Na própria tela do celular", "Num papel que você fotografa", "No portal, no dia seguinte"], resposta: 0,
+    baloes: [
+      { tela: "app-os", titulo: "Evidências", alvo: { sel: ".ev" },
+        texto: "Registre foto, arquivo, print ou a assinatura. A foto sai com data, hora e o número da OS." },
+      { tela: "app-os", titulo: "O que já foi registrado", alvo: { sel: ".miniaturas" },
+        texto: "Tudo o que você registrou aparece aqui, inclusive o que ainda não subiu." },
+      { tela: "app-assinatura", titulo: "Assinatura do cliente", alvo: { sel: ".quadro" },
+        texto: "O cliente assina com o dedo dentro do quadro. Antes, escreva o nome de quem assina." },
+      { tela: "app-assinatura", titulo: "Salvar assinatura", alvo: { sel: ".btn.p" },
+        texto: "Salve para a assinatura entrar nas evidências da OS." },
+    ],
+  },
+  {
+    codigo: "t3", titulo: "Check-out e envio para aceite", papel: "campo", minutos: 4, rotaDemo: "/", celular: true,
+    descricao: "Descrever o serviço, marcar fora do escopo e enviar a OS para o cliente aprovar.",
+    pergunta: "O que acontece no check-out?",
+    opcoes: ["As horas são calculadas e a OS vai para o aceite", "A OS é apagada", "Nada: só fecha o app"], resposta: 0,
+    baloes: [
+      { tela: "app-os", titulo: "Descrição", alvo: { sel: ".input.area" },
+        texto: "Conte o que foi feito em poucas linhas. O usuário-chave lê isto antes de aprovar." },
+      { tela: "app-os", titulo: "Fora do escopo", alvo: { sel: ".check" },
+        texto: "Marque se o pedido não estava previsto. O gerente avalia e abre a proposta de escopo." },
+      { tela: "app-os", titulo: "Check-out e enviar", alvo: { sel: ".btn.p >> nth=-1" },
+        texto: "Ao terminar, o check-out calcula as horas e manda a OS para o aceite do cliente." },
+      { tela: "app-perfil", titulo: "Pendências", alvo: { sel: ".cartao:has(.item-fila)" },
+        texto: "Sem internet, os envios esperam aqui. Enviar agora tenta de novo; o que deu erro aparece em vermelho." },
+    ],
+  },
+  {
+    codigo: "t4", titulo: "Abrir uma OS pelo celular", papel: "campo", minutos: 3, rotaDemo: "/", celular: true,
+    descricao: "A aba + Nova: cliente, tipo, data e responsável, mesmo sem internet.",
+    pergunta: "Sem internet, dá para abrir uma OS pelo app?",
+    opcoes: ["Sim: ela entra na fila e sobe depois", "Não: o app bloqueia", "Só ligando para o gerente"], resposta: 0,
+    baloes: [
+      { tela: "app-nova", titulo: "A aba + Nova", alvo: { sel: ".ab .on" },
+        texto: "Abra uma OS na hora, por exemplo para um chamado que surgiu durante a visita." },
+      { tela: "app-nova", titulo: "Cliente e projeto", alvo: { sel: ".in2 >> nth=0" },
+        texto: "Escolha o projeto. Só aparecem os projetos em que você trabalha." },
+      { tela: "app-nova", titulo: "Tipo da OS", alvo: { sel: ".sg" },
+        texto: "Corretiva, preventiva, implantação ou visita." },
+      { tela: "app-nova", titulo: "Registrar OS", alvo: { sel: ".bt" },
+        texto: "A OS ganha número assim que chega ao servidor. Sem internet, ela entra na fila e sobe depois, sem duplicar." },
+    ],
+  },
+
+  // ------------------------------------------------------------------ Atendente
+  {
+    codigo: "a1", titulo: "Monitor de atendimento", papel: "atende", minutos: 4, rotaDemo: "/atendimento/monitor",
+    descricao: "Seu status, os indicadores do setor e a fila de conversas esperando.",
+    pergunta: "Quando a fila deixa de entregar conversas para você?",
+    opcoes: ["Quando você está em pausa ou offline", "Quando chega uma mensagem nova", "Nunca"], resposta: 0,
+    baloes: [
+      { tela: "a-monitor", titulo: "O seu status", alvo: { sel: "main button:has-text('Pausar')" },
+        texto: "Em pausa ou offline, a fila não entrega conversas para você. Volte quando estiver disponível." },
+      { tela: "a-monitor", titulo: "Principais indicadores", alvo: card("h2:text-is('Principais indicadores')"),
+        texto: "Atendidas, resolvidas no primeiro atendimento, tempo de espera e de atendimento, comparados ao período anterior." },
+      { tela: "a-monitor", titulo: "Período", alvo: { sel: "main [aria-label='Período']" },
+        texto: "Troque entre hoje, esta semana e este mês." },
+      { tela: "a-fila", titulo: "Aguardando atendimento", alvo: { sel: "main table:has(th:has-text('Posição'))" },
+        texto: "Quem está na fila, em ordem de chegada, com o tempo de espera de cada um." },
+      { tela: "a-fila", titulo: "Atender", alvo: { sel: "main table:has(th:has-text('Posição')) tbody tr >> nth=0" },
+        texto: "No fim da linha, Atender assume a conversa e abre o chat. Disponível, você também recebe conversas automaticamente." },
+    ],
+  },
+  {
+    codigo: "a2", titulo: "Conversas do WhatsApp", papel: "atende", minutos: 4, rotaDemo: "/projetos/:p/conversas",
+    descricao: "Os grupos do projeto, os não lidos, assumir uma conversa e responder.",
+    pergunta: "O que mostra o botão ao lado do nome do grupo?",
+    opcoes: ["O setor e a situação do atendimento", "O número do celular do cliente", "A data do projeto"], resposta: 0,
+    baloes: [
+      { tela: "a-conversas", titulo: "Os grupos do projeto", alvo: { sel: "main a:has-text('Beta Logística · Implantação')" },
+        texto: "Cada grupo de WhatsApp aparece aqui, com o número de mensagens não lidas." },
+      { tela: "a-conversas", titulo: "Filtros", alvo: { sel: "main button:has-text('Não lidos')" },
+        texto: "Veja só o que você ainda não leu ou onde foi mencionado." },
+      { tela: "a-conversa", titulo: "Assumir a conversa", alvo: { sel: "button[aria-label^='Assumir a conversa']" },
+        texto: "Mostra o setor e a posição na fila. Assuma para responder em nome do setor." },
+      { tela: "a-conversa", titulo: "Responder", alvo: { sel: "button[aria-label='Enviar mensagem']" },
+        texto: "Escreva e envie. O clipe ao lado anexa arquivos e fotos." },
+    ],
+  },
+  {
+    codigo: "a3", titulo: "Transferir e encerrar", papel: "atende", minutos: 3, rotaDemo: "/atendimento/monitor",
+    descricao: "Passar a conversa para outro setor ou pessoa, devolver à fila e encerrar.",
+    pergunta: "O que acontece quando você devolve a conversa à fila?",
+    opcoes: ["Outra pessoa do setor pode assumir", "A conversa é apagada", "O cliente é bloqueado"], resposta: 0,
+    baloes: [
+      { tela: "a-fila", titulo: "Em atendimento", alvo: { sel: "main table:has(th:has-text('Duração'))" },
+        texto: "As conversas em andamento, com o atendente e há quanto tempo o cliente espera resposta." },
+      { tela: "a-fila", titulo: "Abrir / transferir", alvo: { sel: "main button:has-text('Abrir / transferir') >> nth=0" },
+        texto: "Abre as ações da conversa." },
+      { tela: "a-transferir", titulo: "Transferir", alvo: { sel: "[role=dialog] button:text-is('Transferir')" },
+        texto: "Escolha outro setor e, se quiser, a pessoa. A conversa vai para a fila de quem recebe." },
+      { tela: "a-transferir", titulo: "Devolver ou encerrar", alvo: { sel: "[role=dialog] button:has-text('Encerrar')" },
+        texto: "Devolver à fila libera a conversa para outra pessoa. Encerrar fecha o atendimento e conta nos indicadores." },
+    ],
+  },
+
+  // ------------------------------------------------------------------ Usuário-chave (cliente)
+  {
+    codigo: "c1", titulo: "Acompanhar o projeto", papel: "cliente", minutos: 3, rotaDemo: "/projetos/:p",
+    descricao: "O avanço, as fases, os próximos marcos e as reuniões do seu projeto.",
+    pergunta: "Onde você vê as próximas reuniões do projeto?",
+    opcoes: ["No cartão Próximos marcos e reuniões", "Na aba Conversas", "Em Usuários"], resposta: 0,
+    baloes: [
+      { tela: "c-visao", titulo: "As abas do projeto", alvo: { sel: "nav[aria-label='Seções do projeto']" },
+        texto: "Documentos, cronograma, atas, OS e conversas do seu projeto, sempre nas mesmas abas." },
+      { tela: "c-visao", titulo: "Avanço físico", alvo: card("h2:text-is('Avanço físico')"),
+        texto: "Quanto do projeto já foi entregue até hoje." },
+      { tela: "c-visao", titulo: "Avanço por fase", alvo: card("h2:text-is('Avanço por fase')"),
+        texto: "Cada fase da EAP com o percentual concluído." },
+      { tela: "c-visao", titulo: "Marcos e reuniões", alvo: card("h2:text-is('Próximos marcos e reuniões')"),
+        texto: "As próximas entregas importantes e as reuniões marcadas." },
+    ],
+  },
+  {
+    codigo: "c2", titulo: "Aprovar ou recusar uma OS", papel: "cliente", minutos: 4, rotaDemo: "/projetos/:p/os",
+    descricao: "Conferir as evidências do serviço e aprovar, ou recusar com o motivo.",
+    pergunta: "Ao recusar uma OS, o que você precisa informar?",
+    opcoes: ["O motivo da recusa", "O CPF do técnico", "Nada"], resposta: 0,
+    baloes: [
+      { tela: "c-os", titulo: "Esperando a sua aprovação", alvo: { sel: "main button:has-text('Aguardando aceite')" },
+        texto: "Aqui ficam as OS que o técnico terminou e que esperam o seu aceite." },
+      { tela: "c-os", titulo: "Abra a OS", alvo: { sel: "main table" },
+        texto: "Clique no título para ver o que foi feito." },
+      { tela: "c-os-aceite", titulo: "Confira as evidências", alvo: { sel: "[role=dialog] button[aria-label^='Abrir foto'] >> nth=0" },
+        texto: "Veja as fotos, os prints e a assinatura antes de decidir." },
+      { tela: "c-os-aceite", titulo: "Aprovar", alvo: { sel: "[role=dialog] button:text-is('Aprovar')" },
+        texto: "Aprovou: as horas entram na medição do mês." },
+      { tela: "c-os-aceite", titulo: "Recusar", alvo: { sel: "[role=dialog] button:text-is('Recusar')" },
+        texto: "Recusou: escreva o motivo. A OS volta para o técnico corrigir." },
+    ],
+  },
+  {
+    codigo: "c3", titulo: "Ler as atas", papel: "cliente", minutos: 3, rotaDemo: "/projetos/:p/atas",
+    descricao: "As atas das reuniões, os participantes, a pauta, as decisões e o PDF.",
+    pergunta: "Onde ficam as decisões tomadas na reunião?",
+    opcoes: ["Na própria ata, em Decisões", "No cronograma", "Em Clientes"], resposta: 0,
+    baloes: [
+      { tela: "c-atas", titulo: "As atas", alvo: { sel: "main button:has-text('Revisão do protótipo') >> nth=0" },
+        texto: "Todas as reuniões do projeto, com número, data e situação." },
+      { tela: "c-atas", titulo: "Participantes", alvo: { sel: "main h3:text-is('Participantes')" },
+        texto: "Quem estava na reunião. Quando pedirem a sua ciência, confirme por aqui." },
+      { tela: "c-atas", titulo: "Gerar PDF", alvo: { sel: "main button:has-text('Gerar PDF')" },
+        texto: "Baixe a ata em PDF para guardar ou compartilhar." },
+    ],
+  },
+];

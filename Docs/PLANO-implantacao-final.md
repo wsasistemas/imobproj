@@ -86,8 +86,8 @@ Pendências da Fase 2 que dependem do Wagner:
 
 ## Fase 8 — Centro de Treinamento
 
-- [ ] Tabelas `imobproj.tr_trilhas`, `tr_modulos`, `tr_passos` (alvo em %), `tr_progresso`, com a mesma estrutura do Portal Atendimento.
-- [ ] Telas capturadas da demo por script Playwright (`public/treinamento/*.webp`).
-- [ ] Telas **Meus treinamentos** (trilha do perfil, cartões com progresso) e **Gerenciar tutoriais** (editor de balão, progresso por perfil).
-- [ ] Tour por balões com pergunta no fim e "Praticar na demonstração".
-- [ ] Trilhas: Gerente de projetos (6), Técnico de campo (4), Atendente (3), Usuário-chave (3).
+- [x] Tabelas `imobproj.tr_trilhas`, `tr_trilha_perfis` (perfil → trilha, no lugar do setor), `tr_modulos`, `tr_trilha_modulos`, `tr_passos` (alvo em %) e `tr_progresso`, com a mesma estrutura do Portal Atendimento. Migration `20261031000700_treinamento.sql`; funções `tr_*` (o gabarito só em `tr_admin_modulo`); teste `supabase/tests/treinamento.sql` (8 cenários).
+- [x] Telas capturadas da demo por script Playwright (`public/treinamento/*.webp`): `node scripts/capturar-treinamento.mjs` mede os alvos (bounding box dos seletores, em %) e `node scripts/gerar-carga-treinamento.mjs` escreve a carga na migration a partir de `scripts/treinamento/conteudo.mjs`. Telas do celular vêm dos mockups aprovados do app.
+- [x] Telas **Meus treinamentos** (`/treinamento/meus[/id]`: trilha do perfil, cartões com progresso, "Ver como" do admin) e **Gerenciar tutoriais** (`/treinamento/gerenciar`: módulos, editor de balão com arraste, trilha de cada perfil, progresso por perfil).
+- [x] Tour por balões (teclado ← → Esc, retomada do passo, "Passar sozinho") com pergunta no fim e "Praticar na demonstração" (`NEXT_PUBLIC_DEMO_URL`; dentro da demo, a própria rota).
+- [x] Trilhas: Gerente de projetos (6), Técnico de campo (4), Atendente (3), Usuário-chave (3, padrão de quem não tem perfil com trilha).

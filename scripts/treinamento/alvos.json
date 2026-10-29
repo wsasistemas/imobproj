@@ -1,0 +1,464 @@
+{
+  "a-conversa|button[aria-label^='Assumir a conversa']": [
+    71,
+    34.1,
+    5.1,
+    3.6
+  ],
+  "a-conversa|button[aria-label='Enviar mensagem']": [
+    73.5,
+    94.6,
+    2.5,
+    4
+  ],
+  "a-conversas|main a:has-text('Beta Logística · Implantação')": [
+    19.7,
+    48.3,
+    22.2,
+    7
+  ],
+  "a-conversas|main button:has-text('Não lidos')": [
+    25.3,
+    39.1,
+    7.5,
+    3.6
+  ],
+  "a-fila|main button:has-text('Abrir / transferir') >> nth=0": [
+    86.8,
+    86.8,
+    8.5,
+    3.6
+  ],
+  "a-fila|main table:has(th:has-text('Duração'))": [
+    19.7,
+    81.3,
+    78.1,
+    15.4
+  ],
+  "a-fila|main table:has(th:has-text('Posição'))": [
+    19.7,
+    57.2,
+    80.3,
+    15.4
+  ],
+  "a-fila|main table:has(th:has-text('Posição')) tbody tr >> nth=0": [
+    19.7,
+    61.8,
+    80.3,
+    5.4
+  ],
+  "a-monitor|h2:text-is('Principais indicadores')|card": [
+    19.6,
+    28.9,
+    78.2,
+    49.7
+  ],
+  "a-monitor|main [aria-label='Período']": [
+    83.5,
+    30.3,
+    10,
+    4
+  ],
+  "a-monitor|main button:has-text('Pausar')": [
+    30.5,
+    22.8,
+    5.7,
+    3.6
+  ],
+  "a-transferir|[role=dialog] button:has-text('Encerrar')": [
+    46.7,
+    69.5,
+    7.7,
+    4
+  ],
+  "a-transferir|[role=dialog] button:text-is('Transferir')": [
+    35.6,
+    57,
+    28.9,
+    4
+  ],
+  "app-assinatura|.btn.p": [
+    51.3,
+    90.3,
+    44,
+    7.5
+  ],
+  "app-assinatura|.quadro": [
+    4.7,
+    28,
+    90.7,
+    60.5
+  ],
+  "app-hoje|.btn.p >> nth=0": [
+    9.7,
+    44.2,
+    80.7,
+    7.5
+  ],
+  "app-hoje|.cartao >> nth=0": [
+    4.7,
+    23.8,
+    90.7,
+    27.1
+  ],
+  "app-hoje|.selo-fila": [
+    59.3,
+    7.1,
+    36.7,
+    3.9
+  ],
+  "app-login|.folha": [
+    7.3,
+    20.6,
+    85.3,
+    52.3
+  ],
+  "app-nova|.ab .on": [
+    25.4,
+    96.1,
+    24.6,
+    2.2
+  ],
+  "app-nova|.bt": [
+    4.4,
+    84.7,
+    91.3,
+    8.1
+  ],
+  "app-nova|.in2 >> nth=0": [
+    4.4,
+    17.7,
+    91.3,
+    7
+  ],
+  "app-nova|.sg": [
+    4.4,
+    30.6,
+    91.3,
+    9.8
+  ],
+  "app-os|.btn.p >> nth=-1": [
+    4.7,
+    90.3,
+    90.7,
+    7.5
+  ],
+  "app-os|.check": [
+    4.7,
+    85.3,
+    90.7,
+    3.4
+  ],
+  "app-os|.ev": [
+    4.7,
+    42.6,
+    90.7,
+    8.8
+  ],
+  "app-os|.input.area": [
+    4.7,
+    67.8,
+    90.7,
+    16
+  ],
+  "app-os|.miniaturas": [
+    4.7,
+    52.9,
+    90.7,
+    10
+  ],
+  "app-perfil|.cartao:has(.item-fila)": [
+    4.7,
+    44.4,
+    90.7,
+    24.9
+  ],
+  "c-atas|main button:has-text('Gerar PDF')": [
+    47.2,
+    52,
+    7.1,
+    4
+  ],
+  "c-atas|main button:has-text('Revisão do protótipo') >> nth=0": [
+    19.7,
+    46.6,
+    24.9,
+    7.8
+  ],
+  "c-atas|main h3:text-is('Participantes')": [
+    47.2,
+    61.5,
+    13.2,
+    1.8
+  ],
+  "c-os-aceite|[role=dialog] button:text-is('Aprovar')": [
+    74.8,
+    20.8,
+    7.4,
+    4
+  ],
+  "c-os-aceite|[role=dialog] button:text-is('Recusar')": [
+    82.7,
+    20.8,
+    7.4,
+    4
+  ],
+  "c-os-aceite|[role=dialog] button[aria-label^='Abrir foto'] >> nth=0": [
+    74.8,
+    81.2,
+    7.6,
+    14.8
+  ],
+  "c-os|main button:has-text('Aguardando aceite')": [
+    54.4,
+    28.1,
+    12,
+    4
+  ],
+  "c-os|main table": [
+    19.7,
+    40.8,
+    78.1,
+    9.4
+  ],
+  "c-visao|h2:text-is('Avanço físico')|card": [
+    19.6,
+    28.1,
+    18.7,
+    23.8
+  ],
+  "c-visao|h2:text-is('Avanço por fase')|card": [
+    19.6,
+    53.7,
+    25.3,
+    46.3
+  ],
+  "c-visao|h2:text-is('Próximos marcos e reuniões')|card": [
+    46,
+    53.7,
+    25.3,
+    46.3
+  ],
+  "c-visao|nav[aria-label='Seções do projeto']": [
+    19.6,
+    21.9,
+    78.2,
+    3.6
+  ],
+  "g-atas|main button:has-text('Enviar ao grupo WhatsApp')": [
+    47.2,
+    53,
+    14.2,
+    4
+  ],
+  "g-atas|main button:has-text('Nova ata')": [
+    35.9,
+    29.5,
+    7.8,
+    4
+  ],
+  "g-atas|main button:has-text('Revisão do protótipo') >> nth=0": [
+    19.7,
+    48.2,
+    24.9,
+    7.8
+  ],
+  "g-atas|main button:has-text('Solicitar ciência')": [
+    75.1,
+    48.1,
+    9.6,
+    4
+  ],
+  "g-atas|main table:has(th:has-text('Presença'))": [
+    45.8,
+    68,
+    51.9,
+    29.7
+  ],
+  "g-clientes|main button:has-text('Ativos ·')": [
+    57.8,
+    29.6,
+    6.2,
+    4
+  ],
+  "g-clientes|main button:has-text('Novo cliente')": [
+    88.3,
+    22,
+    9.5,
+    4
+  ],
+  "g-clientes|main table": [
+    19.7,
+    37.8,
+    78.1,
+    19.4
+  ],
+  "g-docs|main button:has-text('Enviar documento')": [
+    85.7,
+    33.4,
+    12.1,
+    4
+  ],
+  "g-docs|main table": [
+    19.7,
+    39.3,
+    78.1,
+    29.4
+  ],
+  "g-eap|main button:has-text('Editar horas orçadas de 1.1')": [
+    58.7,
+    56.9,
+    5.3,
+    3.6
+  ],
+  "g-eap|main button:has-text('Importar planilha')": [
+    41.2,
+    38.9,
+    11.6,
+    4
+  ],
+  "g-eap|main button:text-is('EAP')": [
+    29.2,
+    28.1,
+    5.4,
+    3.6
+  ],
+  "g-gantt|main button:has-text('Nova linha de base')": [
+    74.9,
+    37.9,
+    12.5,
+    4
+  ],
+  "g-gantt|main button:text-is('Gantt')": [
+    35.7,
+    28.6,
+    5,
+    4
+  ],
+  "g-medicao|button[aria-label='Mês anterior']": [
+    63.7,
+    28.4,
+    2.5,
+    4
+  ],
+  "g-medicao|main button:has-text('Exportar .xlsx')": [
+    87.7,
+    28.4,
+    10.1,
+    4
+  ],
+  "g-medicao|main table:has(th:has-text('Aprovada em'))": [
+    19.7,
+    74.9,
+    78.1,
+    10.8
+  ],
+  "g-medicao|main table:has(th:text-is('Pessoa'))": [
+    19.7,
+    53.5,
+    38.4,
+    13.5
+  ],
+  "g-medicao|main table:has(th:text-is('Pessoas'))": [
+    59.3,
+    53.5,
+    38.4,
+    13.5
+  ],
+  "g-os-det|[role=dialog] button:has-text('Enviar evidência')": [
+    88.8,
+    61.3,
+    9.8,
+    3.6
+  ],
+  "g-os-det|[role=dialog] h3:text-is('Dados')": [
+    74.8,
+    15.3,
+    23.8,
+    1.8
+  ],
+  "g-os-det|[role=dialog] h3:text-is('Histórico')": [
+    74.8,
+    78.4,
+    23.8,
+    1.8
+  ],
+  "g-os|main a:has-text('Medição do mês')": [
+    19.6,
+    33.4,
+    11.3,
+    4
+  ],
+  "g-os|main button:has-text('Aguardando aceite')": [
+    54.4,
+    28.1,
+    12,
+    4
+  ],
+  "g-os|main button:has-text('Nova OS')": [
+    31.5,
+    33.4,
+    7.7,
+    4
+  ],
+  "g-os|main table": [
+    19.7,
+    46.1,
+    80.3,
+    52.1
+  ],
+  "g-usuarios|main a:has-text('Acesso por projeto')": [
+    26,
+    21.5,
+    10.3,
+    3.6
+  ],
+  "g-usuarios|main button:has-text('Equipe interna')": [
+    26.2,
+    27.8,
+    9.6,
+    4
+  ],
+  "g-usuarios|main table": [
+    19.7,
+    43.5,
+    79.4,
+    47.8
+  ],
+  "g-visao|h2:text-is('Avanço físico')|card": [
+    19.6,
+    28.1,
+    18.7,
+    23.8
+  ],
+  "g-visao|h2:text-is('Horas apontadas')|card": [
+    39.4,
+    28.1,
+    18.7,
+    23.8
+  ],
+  "g-visao|h2:text-is('Ordens de Serviço')|card": [
+    59.2,
+    28.1,
+    18.7,
+    23.8
+  ],
+  "g-visao|h2:text-is('Pendências de atas')|card": [
+    79.1,
+    28.1,
+    18.7,
+    23.8
+  ],
+  "g-visao|h2:text-is('Pessoas envolvidas')|card": [
+    72.5,
+    53.7,
+    25.3,
+    46.3
+  ],
+  "g-visao|nav[aria-label='Seções do projeto']": [
+    19.6,
+    21.9,
+    78.2,
+    3.6
+  ]
+}

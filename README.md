@@ -160,6 +160,22 @@ Arquivos:
 Para atualizar a demo depois de novas migrations, rode de novo o passo 2. Ele aplica só as migrations pendentes e recria os dados.
 Para só recriar os dados, use o botão **Restaurar dados da demo**.
 
+## Centro de Treinamento
+
+Menu **Treinamento** (todos veem): tutoriais com balões sobre a tela real do sistema, uma trilha por perfil de acesso
+(Gerente de projetos, Técnico de campo, Atendente e Usuário-chave, que é a padrão). O progresso fica no banco
+(`imobproj.tr_progresso`) e retoma de onde parou. No fim de cada módulo há uma pergunta (conferida no banco) e o botão
+**Praticar na demonstração**, que abre a demo em `NEXT_PUBLIC_DEMO_URL` já na tela do módulo. O super admin vê
+**Gerenciar tutoriais** (editor de balão com arraste, trilha de cada perfil e progresso) e o "Ver como" por perfil.
+
+O conteúdo é gerado, não digitado no banco:
+1. `scripts/treinamento/conteudo.mjs`: trilhas, módulos, textos dos balões e o seletor de cada alvo.
+2. `npm run treinamento:capturar`: com o portal em modo demo no ar (porta 3229, banco local com a demo aplicada; o passo a
+   passo está no topo do script), grava `public/treinamento/*.webp` e mede os alvos em `scripts/treinamento/alvos.json`.
+   As telas do celular saem dos mockups aprovados do app (`docs/mockups/`).
+3. `npm run treinamento:carga`: escreve a carga na migration `20261031000700_treinamento.sql`. Ela só insere o que não
+   existe, então o que o super admin editar em Gerenciar tutoriais não é sobrescrito.
+
 ## Estrutura
 
 ```

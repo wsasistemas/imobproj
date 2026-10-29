@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "treinamento:capturar": "node scripts/capturar-treinamento.mjs",
+    "treinamento:carga": "node scripts/gerar-carga-treinamento.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
@@ -47,6 +49,8 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "15.5.28",
+    "playwright-core": "^1.56.1",
+    "sharp": "^0.35.5",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
