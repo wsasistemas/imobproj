@@ -1,3 +1,4 @@
+import type { ChaveIcone } from "@/components/shell/icones-menu.data";
 import {
   CalendarRange,
   ClipboardCheck,
@@ -8,7 +9,9 @@ import {
   MessageCircle,
   NotebookPen,
   Settings,
+  Building2,
   Smartphone,
+  UserRound,
   Users,
   Webhook,
   type LucideIcon,
@@ -17,6 +20,7 @@ import {
 // Fonte única do menu lateral (grupos, itens e submenus) e dos títulos das páginas.
 // Cada item tem um ícone HIG: símbolo branco num tile na cor de sistema (`cor`, variável de globals.css).
 // Itens de projeto usam ":id" no href; o menu troca pelo projeto aberto (ou o último visitado) com hrefDoItem.
+// `colorido`: ícone Fluent Color do Portal Atendimento (src/components/shell/icones-menu.data.ts), que substitui o tile.
 // Telas ainda não implementadas abrem a página "Em construção" (rota coringa).
 
 export type ItemMenu = {
@@ -26,6 +30,8 @@ export type ItemMenu = {
   icon: LucideIcon;
   /** Cor de sistema do tile do ícone (ex.: "var(--sys-blue)"). */
   cor: string;
+  /** Ícone Fluent Color (Portal Atendimento) no lugar do tile. */
+  colorido?: ChaveIcone;
   /** Subtítulo da página. */
   descricao: string;
   filhos?: ItemMenu[];
@@ -40,6 +46,7 @@ export const MENU: GrupoMenu[] = [
     itens: [
       {
         id: "inicio",
+        colorido: "home",
         label: "Página Inicial",
         href: "/",
         icon: House,
@@ -48,6 +55,7 @@ export const MENU: GrupoMenu[] = [
       },
       {
         id: "projetos",
+        colorido: "projetos",
         label: "Projetos",
         href: "/projetos",
         icon: FolderKanban,
@@ -104,6 +112,7 @@ export const MENU: GrupoMenu[] = [
     itens: [
       {
         id: "conversas",
+        colorido: "conversas",
         label: "Conversas WhatsApp",
         href: "/projetos/:id/conversas",
         icon: MessageCircle,
@@ -113,19 +122,45 @@ export const MENU: GrupoMenu[] = [
     ],
   },
   {
+    id: "cadastros",
+    label: "Cadastros",
+    itens: [
+      {
+        id: "cadastros_clientes",
+        colorido: "clientes",
+        label: "Clientes",
+        href: "/cadastros/clientes",
+        icon: Building2,
+        cor: "var(--sys-orange)",
+        descricao: "Empresas atendidas, contatos principais e os projetos de cada uma.",
+      },
+      {
+        id: "cadastros_usuarios",
+        colorido: "usuarios",
+        label: "Usuários",
+        href: "/cadastros/usuarios",
+        icon: UserRound,
+        cor: "var(--sys-blue)",
+        descricao: "Quem acessa o portal e o app: equipe interna, prestadores e contatos dos clientes.",
+      },
+      {
+        id: "cadastros_equipes",
+        colorido: "equipes",
+        label: "Equipes",
+        href: "/cadastros/equipes",
+        icon: Users,
+        cor: "var(--sys-pink)",
+        descricao: "Grupos de pessoas dentro de um setor. Uma pessoa pode estar em várias equipes.",
+      },
+    ],
+  },
+  {
     id: "administracao",
     label: "Administração",
     itens: [
       {
-        id: "admin_equipe",
-        label: "Equipe e permissões",
-        href: "/admin/equipe",
-        icon: Users,
-        cor: "var(--sys-teal)",
-        descricao: "Membros de cada projeto e o que cada papel pode fazer.",
-      },
-      {
         id: "admin_whatsapp",
+        colorido: "openwa",
         label: "WhatsApp OpenWA",
         href: "/admin/whatsapp",
         icon: Webhook,
@@ -134,6 +169,7 @@ export const MENU: GrupoMenu[] = [
       },
       {
         id: "admin_app_campo",
+        colorido: "app-campo",
         label: "App de campo",
         href: "/admin/app-campo",
         icon: Smartphone,
@@ -142,6 +178,7 @@ export const MENU: GrupoMenu[] = [
       },
       {
         id: "admin_configuracoes",
+        colorido: "configuracoes",
         label: "Configurações",
         href: "/admin/configuracoes",
         icon: Settings,

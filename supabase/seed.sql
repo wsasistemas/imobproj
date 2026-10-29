@@ -436,3 +436,51 @@ insert into imobproj.wa_messages (id, group_id, wa_message_id, direction, author
   ('40000000-0000-0000-0000-000000000009', '20000000-0000-0000-0000-000000000002', null, 'out', '5511900000003', 'a0000000-0000-0000-0000-000000000003',
    'Daily às 9h30 amanhã.', null, null, 'pendente', 0, null, '2026-10-28 14:50-03')
 on conflict (id) do nothing;
+
+-- -----------------------------------------------------------------------------
+-- Fase 1 — Cadastros: dados fictícios de clientes, contatos, cargos e equipes
+-- -----------------------------------------------------------------------------
+update imobproj.organizations o
+   set nome_fantasia = v.fantasia, segmento = v.segmento, endereco = v.endereco
+  from (values
+    ('b0000000-0000-0000-0000-000000000001'::uuid, 'WSA Sistemas', 'Tecnologia', 'Av. Paulista, 1000, conj. 81, São Paulo/SP'),
+    ('b0000000-0000-0000-0000-000000000002'::uuid, 'Calper',       'Construção civil', 'Av. Brasil, 1500, Sala 12, Campinas/SP'),
+    ('b0000000-0000-0000-0000-000000000003'::uuid, 'TecnoCampo',   'Serviços de TI', 'R. das Acácias, 88, Valinhos/SP')
+  ) as v(id, fantasia, segmento, endereco)
+ where o.id = v.id and o.nome_fantasia is null;
+
+insert into imobproj.organizations (id, nome, tipo, cnpj, nome_fantasia, segmento, endereco, ativo) values
+  ('b0000000-0000-0000-0000-000000000004', 'Beta Logística S.A.', 'cliente', '44.444.444/0001-44', 'Beta Logística', 'Logística', 'Rod. Anhanguera, km 98, Sumaré/SP', true),
+  ('b0000000-0000-0000-0000-000000000005', 'Épsilon Varejo Ltda.', 'cliente', '55.555.555/0001-55', 'Épsilon', 'Varejo', 'R. XV de Novembro, 300, Jundiaí/SP', false)
+on conflict (id) do nothing;
+
+insert into imobproj.organization_contacts (id, organization_id, nome, cargo, email, telefone_whatsapp, principal) values
+  ('b1000000-0000-0000-0000-000000000001', 'b0000000-0000-0000-0000-000000000002', 'Paulo Mendes',  'Usuário-chave · diretor', 'usuario.chave@exemplo.com.br', '5511900000004', true),
+  ('b1000000-0000-0000-0000-000000000002', 'b0000000-0000-0000-0000-000000000002', 'Carlos Souza',  'Financeiro',              'financeiro@calper.exemplo.com.br', '5519997013388', false),
+  ('b1000000-0000-0000-0000-000000000003', 'b0000000-0000-0000-0000-000000000004', 'Lúcia Ferraz',  'Gerente de TI',           'lucia@beta.exemplo.com.br', '5511987440192', true),
+  ('b1000000-0000-0000-0000-000000000004', 'b0000000-0000-0000-0000-000000000005', 'Sandra Melo',   'Compras',                 'sandra@epsilon.exemplo.com.br', '5521996542201', true)
+on conflict (id) do nothing;
+
+update imobproj.profiles p
+   set cargo = v.cargo, atende_whatsapp = v.atende
+  from (values
+    ('a0000000-0000-0000-0000-000000000001'::uuid, 'Diretora de operações', true),
+    ('a0000000-0000-0000-0000-000000000002'::uuid, 'Diretor',               false),
+    ('a0000000-0000-0000-0000-000000000003'::uuid, 'Gerente de projetos',   true),
+    ('a0000000-0000-0000-0000-000000000004'::uuid, 'Diretor (cliente)',     false),
+    ('a0000000-0000-0000-0000-000000000005'::uuid, 'Analista de suporte',   true),
+    ('a0000000-0000-0000-0000-000000000006'::uuid, 'Técnico de campo',      false)
+  ) as v(id, cargo, atende)
+ where p.id = v.id and p.cargo is null;
+
+insert into imobproj.teams (id, nome, setor, lider_id) values
+  ('b2000000-0000-0000-0000-000000000001', 'Suporte técnico', 'Suporte',     'a0000000-0000-0000-0000-000000000005'),
+  ('b2000000-0000-0000-0000-000000000002', 'Implantação',     'Implantação', 'a0000000-0000-0000-0000-000000000003')
+on conflict (id) do nothing;
+
+insert into imobproj.team_members (team_id, user_id) values
+  ('b2000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000005'),
+  ('b2000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000006'),
+  ('b2000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000003'),
+  ('b2000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000001')
+on conflict do nothing;

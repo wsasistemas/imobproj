@@ -1,6 +1,5 @@
 "use server";
 
-import { headers } from "next/headers";
 import type { z } from "zod";
 import {
   esquemaAlterarAtivo,
@@ -10,6 +9,7 @@ import {
   esquemaProjeto,
 } from "@/components/equipe/esquemas";
 import { falha, mensagemErroBanco, sucesso, type ResultadoAcao } from "@/lib/acoes";
+import { enviarConvite } from "@/lib/convite";
 import { exigirSuperAdmin } from "@/lib/projeto/servidor";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -36,24 +36,6 @@ async function garantirSuperAdmin(): Promise<ResultadoAcao<never> | null> {
   } catch (e) {
     return falha(e instanceof Error ? e.message : "Sem permissão.");
   }
-}
-
-async function origemDaRequisicao() {
-  const h = await headers();
-  const origem = h.get("origin");
-  if (origem) return origem;
-  const host = h.get("x-forwarded-host") ?? h.get("host") ?? "localhost:3000";
-  const protocolo = h.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
-  return `${protocolo}://${host}`;
-}
-
-async function enviarConvite(email: string, nome: string) {
-  const origem = await origemDaRequisicao();
-  return createAdminClient().auth.admin.inviteUserByEmail(email, {
-    // "sistema" faz o trigger imobproj_on_auth_user_created criar o profile (o Auth é compartilhado).
-    data: { nome, sistema: "imobproj" },
-    redirectTo: `${origem}/auth/callback?next=/redefinir-senha`,
-  });
 }
 
 export type ResultadoAdicionar = { tipo: "convidado" | "adicionado" | "reativado" | "atualizado"; mensagem: string };

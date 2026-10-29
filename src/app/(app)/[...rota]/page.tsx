@@ -35,7 +35,7 @@ export default async function EmConstrucaoPage({ params }: Props) {
       />
       <Card>
         <CardContent className="flex flex-col items-center gap-3 py-14 text-center">
-          <IconeMenu icon={item.icon} cor={item.cor} tamanho={52} />
+          <IconeMenu icon={item.icon} cor={item.cor} colorido={item.colorido} tamanho={52} />
           <h2 className="mt-2 text-[17px] font-semibold">Módulo em construção</h2>
           <p className="max-w-md text-muted-foreground">
             A estrutura do banco, as permissões e o menu já estão prontos. A tela de <b>{item.label}</b> chega na

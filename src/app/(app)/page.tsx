@@ -137,7 +137,7 @@ export default async function PaginaInicial() {
             href={hrefDoItem(item, projetoAtual)}
             className="group flex items-start gap-3 rounded-[12px] border border-border bg-card p-4 shadow-[var(--shadow-card)] transition-colors hover:border-primary-border hover:bg-primary-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
           >
-            <IconeMenu icon={item.icon} cor={item.cor} tamanho={36} />
+            <IconeMenu icon={item.icon} cor={item.cor} colorido={item.colorido} tamanho={36} />
             <span className="min-w-0">
               <span className="block font-semibold group-hover:text-primary">
                 {pai ? `${pai.label} · ` : ""}

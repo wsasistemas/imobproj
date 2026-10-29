@@ -26,14 +26,14 @@ Checklist binário: cada item está **feito** ou **não feito**. Nada de "parcia
 
 ## Fase 1 — Cadastros: Clientes, Usuários e Equipes
 
-- [ ] Migration `imobproj.organizations`: colunas `nome_fantasia`, `segmento`, `endereco`, `ativo`.
-- [ ] Tabela `imobproj.organization_contacts` (nome, cargo, e-mail, WhatsApp, principal).
-- [ ] Coluna `imobproj.profiles.cargo` e `profiles.ativo`.
-- [ ] Tabelas `imobproj.teams` (nome, setor, líder) e `imobproj.team_members`.
-- [ ] Tela **Clientes** (`/cadastros/clientes`): lista com busca e filtro Ativos/Inativos, ficha com contatos e projetos, exportar Excel.
-- [ ] Tela **Usuários** (`/cadastros/usuarios`): nome, e-mail, WhatsApp, cargo, empresa, equipes, acesso por projeto, "Atende no WhatsApp", convidar e reenviar convite.
-- [ ] Tela **Equipes** (`/cadastros/equipes`): cartões por equipe, líder, adicionar e remover pessoas.
-- [ ] Menu: grupo "Cadastros". "Equipe e permissões" passa a redirecionar para Usuários.
+- [x] Migration `imobproj.organizations`: colunas `nome_fantasia`, `segmento`, `endereco`, `ativo`.
+- [x] Tabela `imobproj.organization_contacts` (nome, cargo, e-mail, WhatsApp, principal).
+- [x] Coluna `imobproj.profiles.cargo` e `profiles.ativo`.
+- [x] Tabelas `imobproj.teams` (nome, setor, líder) e `imobproj.team_members`.
+- [x] Tela **Clientes** (`/cadastros/clientes`): lista com busca e filtro Ativos/Inativos, ficha com contatos e projetos, exportar Excel.
+- [x] Tela **Usuários** (`/cadastros/usuarios`): nome, e-mail, WhatsApp, cargo, empresa, equipes, acesso por projeto, "Atende no WhatsApp", convidar e reenviar convite.
+- [x] Tela **Equipes** (`/cadastros/equipes`): cartões por equipe, líder, adicionar e remover pessoas.
+- [x] Menu: grupo "Cadastros". "Equipe e permissões" passa a redirecionar para Usuários.
 
 ## Fase 2 — Perfis e permissões; Permissões por aplicativo
 

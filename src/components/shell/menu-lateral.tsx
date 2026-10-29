@@ -73,7 +73,7 @@ export function MenuLateral({
                       title={recolhido ? item.label : undefined}
                       className={cn(itemCls, recolhido && "justify-center px-0", ativo === item.id && ativoCls)}
                     >
-                      <IconeMenu icon={item.icon} cor={item.cor} />
+                      <IconeMenu icon={item.icon} cor={item.cor} colorido={item.colorido} />
                       {!recolhido && <span className="truncate">{item.label}</span>}
                     </Link>
                   </li>
@@ -93,7 +93,7 @@ export function MenuLateral({
             title={recolhido ? "Expandir menu" : undefined}
             className={cn(itemCls, recolhido && "justify-center px-0")}
           >
-            <IconeMenu icon={recolhido ? PanelLeftOpen : PanelLeftClose} cor="var(--sys-gray)" />
+            <IconeMenu icon={recolhido ? PanelLeftOpen : PanelLeftClose} cor="var(--sys-gray)" colorido={recolhido ? "expandir" : "recolher"} />
             {!recolhido && <span>Recolher menu</span>}
           </button>
         )}
@@ -105,7 +105,7 @@ export function MenuLateral({
               title={recolhido ? "Alterar senha" : undefined}
               className={cn(itemCls, recolhido && "justify-center px-0")}
             >
-              <IconeMenu icon={KeyRound} cor="var(--sys-yellow)" />
+              <IconeMenu icon={KeyRound} cor="var(--sys-yellow)" colorido="senha" />
               {!recolhido && <span>Alterar senha</span>}
             </button>
           }
@@ -118,7 +118,7 @@ export function MenuLateral({
           title={recolhido ? "Sair" : undefined}
           className={cn(itemCls, "disabled:opacity-60", recolhido && "justify-center px-0")}
         >
-          <IconeMenu icon={LogOut} cor="var(--sys-red)" />
+          <IconeMenu icon={LogOut} cor="var(--sys-red)" colorido="sair" />
           {!recolhido && <span>{saindo ? "Saindo…" : "Sair"}</span>}
         </button>
       </div>
@@ -149,7 +149,7 @@ function SubItens({
             aria-current={ativo === filho.id ? "page" : undefined}
             className={cn(itemCls, "min-h-9 text-[13px]", !flyout && "pl-8", ativo === filho.id && ativoCls)}
           >
-            <IconeMenu icon={filho.icon} cor={filho.cor} tamanho={18} />
+            <IconeMenu icon={filho.icon} cor={filho.cor} colorido={filho.colorido} tamanho={18} />
             <span className="truncate">{filho.label}</span>
           </Link>
         </li>
@@ -191,7 +191,7 @@ function GrupoAberto({
         aria-controls={listaId}
         className={cn(itemCls, dentro && "text-white")}
       >
-        <IconeMenu icon={item.icon} cor={item.cor} />
+        <IconeMenu icon={item.icon} cor={item.cor} colorido={item.colorido} />
         <span className="flex-1 truncate text-left">{item.label}</span>
         <ChevronRight size={16} className={cn("shrink-0 opacity-60 transition-transform", aberto && "rotate-90")} aria-hidden="true" />
       </button>
@@ -216,7 +216,7 @@ function GrupoFlyout({ item, ativo, projetoId }: { item: ItemMenu; ativo?: strin
         <PopoverTrigger
           render={
             <button type="button" aria-label={item.label} title={item.label} className={cn(itemCls, "justify-center px-0", dentro && ativoCls)}>
-              <IconeMenu icon={item.icon} cor={item.cor} />
+              <IconeMenu icon={item.icon} cor={item.cor} colorido={item.colorido} />
             </button>
           }
         />
