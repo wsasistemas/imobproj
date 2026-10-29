@@ -6,6 +6,7 @@
 //
 // Responde 200 assim que valida o segredo; o processamento segue em segundo plano (EdgeRuntime.waitUntil):
 //   * qualquer evento da sessão → wa_sessions.last_heartbeat = agora; status pelos eventos session.*;
+//   * conversa sem setor → fila do setor dono do número (imobproj.fn_rotear_conversa; número sem setor: nada muda);
 //   * message.received em grupo cadastrado (wa_groups.wa_group_id) → wa_messages (direction 'in',
 //     idempotente por wa_message_id: on conflict do nothing); autor pelo telefone (wa_group_members → profiles);
 //   * mídia → bucket "whatsapp" (<project>/<group>/<AAAA-MM>/<id>.<ext>), media_path = "whatsapp/<caminho>";
@@ -133,6 +134,8 @@ async function processar(admin: Cliente, env: EnvelopeOpenwa): Promise<void> {
     if (sessao) await heartbeat(admin, sessao.id, status);
   }
 
+  await rotearConversa(admin, grupo.id, sessao?.id ?? null);
+
   const autorId = msg.autorTelefone ? await resolverAutor(admin, grupo.id, msg.autorTelefone) : null;
 
   // Idempotência: a mesma mensagem (retry do OpenWA) não entra duas vezes nem repete evidência/OS.
@@ -244,6 +247,15 @@ async function registrarEventoDeGrupo(admin: Cliente, env: EnvelopeOpenwa): Prom
     { onConflict: "wa_message_id", ignoreDuplicates: true },
   );
   if (error) throw new Error(`wa_messages (sistema): ${error.message}`);
+}
+
+/**
+ * Fila por setor (Fase 3): conversa sem setor entra na fila do setor dono do número que recebeu a mensagem.
+ * Número sem setor, ou banco ainda sem a migration de setores: segue como antes (só registra no log).
+ */
+async function rotearConversa(admin: Cliente, grupoId: string, sessaoId: string | null): Promise<void> {
+  const { error } = await admin.rpc("fn_rotear_conversa", { p_group_id: grupoId, p_session_id: sessaoId });
+  if (error) log("openwa.roteamento_ignorado", { grupo: grupoId, erro: error.message });
 }
 
 async function heartbeat(admin: Cliente, sessaoId: string, status: SessaoWa["status"] | null): Promise<void> {

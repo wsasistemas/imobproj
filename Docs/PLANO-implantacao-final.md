@@ -51,10 +51,10 @@ Pendências da Fase 2 que dependem do Wagner:
 
 ## Fase 3 — Setores, números e fila
 
-- [ ] Tabelas `imobproj.setores`, `imobproj.setor_numeros` (ligado a `wa_sessions`), `imobproj.setor_horarios`, `imobproj.setor_regras`, `imobproj.setor_mensagens`.
-- [ ] Tela **Setores e números**: setor, números (sessões OpenWA), gestor, equipes que atendem.
-- [ ] Tela **Fila e horários**: horário por dia, feriados, regras da fila, mensagens automáticas com variáveis.
-- [ ] Roteamento: uma conversa nova entra na fila do setor dono do número chamado (webhook `openwa-webhook`).
+- [x] Tabelas `imobproj.setores`, `imobproj.setor_numeros` (ligado a `wa_sessions`), `imobproj.setor_horarios`, `imobproj.setor_regras`, `imobproj.setor_mensagens` — mais `setor_feriados`, `teams.setor_id` e `wa_groups.setor_id` (migration `20261031000300_setores.sql`).
+- [x] Tela **Setores e números**: setor, números (sessões OpenWA), gestor, equipes que atendem.
+- [x] Tela **Fila e horários**: horário por dia, feriados, regras da fila, mensagens automáticas com variáveis.
+- [x] Roteamento: uma conversa nova entra na fila do setor dono do número chamado (trigger em `wa_groups` + `fn_rotear_conversa` chamada pelo `openwa-webhook`; número sem setor segue como antes). Teste: `supabase/tests/setores_roteamento.sql`.
 
 ## Fase 4 — Monitor de atendimento
 

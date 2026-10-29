@@ -91,6 +91,8 @@ export const esquemaEquipe = z.object({
   id: id.optional(),
   nome: z.string().trim().min(2, "Informe o nome da equipe.").max(80, "Nome muito longo."),
   setor: textoOpcional(80),
+  // Fase 3: setor escolhido em Setores e números (ausente quando o banco ainda não tem a tabela setores).
+  setor_id: id.nullable().optional(),
   lider_id: id.nullable().optional(),
 });
 export type EquipeEntrada = z.input<typeof esquemaEquipe>;

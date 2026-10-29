@@ -60,6 +60,16 @@ export function Equipes({ podeEditar }: { podeEditar: boolean }) {
       return (data ?? []) as unknown as Equipe[];
     },
   });
+  // Setores da Fase 3. Se o banco ainda não tem a tabela, o formulário volta ao campo de texto.
+  const setores = useQuery({
+    queryKey: ["cadastros", "setores-opcoes"],
+    queryFn: async () => {
+      const { data, error } = await createClient().from("setores").select("id, nome").eq("ativo", true).order("nome");
+      if (error) throw error;
+      return (data ?? []) as { id: string; nome: string }[];
+    },
+    retry: false,
+  });
   const pessoas = useQuery({
     queryKey: ["cadastros", "pessoas-ativas"],
     queryFn: async () => {
@@ -127,7 +137,13 @@ export function Equipes({ podeEditar }: { podeEditar: boolean }) {
           />
         ))}
         {podeEditar && (
-          <FormEquipe key={editando?.id ?? "nova"} equipe={editando} pessoas={pessoas.data ?? []} onConcluir={() => setEditando(null)} />
+          <FormEquipe
+            key={editando?.id ?? "nova"}
+            equipe={editando}
+            pessoas={pessoas.data ?? []}
+            setores={setores.isSuccess ? setores.data : null}
+            onConcluir={() => setEditando(null)}
+          />
         )}
       </div>
 
@@ -273,7 +289,17 @@ const esquemaForm = esquemaEquipe.omit({ id: true });
 type Entrada = z.input<typeof esquemaForm>;
 type Saida = z.output<typeof esquemaForm>;
 
-function FormEquipe({ equipe, pessoas, onConcluir }: { equipe: Equipe | null; pessoas: Pessoa[]; onConcluir: () => void }) {
+function FormEquipe({
+  equipe,
+  pessoas,
+  setores,
+  onConcluir,
+}: {
+  equipe: Equipe | null;
+  pessoas: Pessoa[];
+  setores: { id: string; nome: string }[] | null;
+  onConcluir: () => void;
+}) {
   const queryClient = useQueryClient();
   const {
     register,
@@ -283,15 +309,28 @@ function FormEquipe({ equipe, pessoas, onConcluir }: { equipe: Equipe | null; pe
     formState: { errors },
   } = useForm<Entrada, unknown, Saida>({
     resolver: zodResolver(esquemaForm),
-    defaultValues: { nome: equipe?.nome ?? "", setor: equipe?.setor ?? "", lider_id: equipe?.lider_id ?? null },
+    defaultValues: {
+      nome: equipe?.nome ?? "",
+      setor: equipe?.setor ?? "",
+      setor_id: setores?.find((x) => x.nome === equipe?.setor)?.id ?? null,
+      lider_id: equipe?.lider_id ?? null,
+    },
   });
   const m = useMutation({
-    mutationFn: (d: Saida) => executar(salvarEquipe({ ...d, id: equipe?.id })),
+    // Com setores (Fase 3): grava setor_id e mantém o texto teams.setor com o nome do setor.
+    mutationFn: (d: Saida) =>
+      executar(
+        salvarEquipe(
+          setores
+            ? { ...d, id: equipe?.id, setor: setores.find((x) => x.id === d.setor_id)?.nome ?? null }
+            : { ...d, id: equipe?.id, setor_id: undefined },
+        ),
+      ),
     onSuccess: () => {
       toast.success(equipe ? "Equipe salva." : "Equipe criada. Agora inclua as pessoas.");
       queryClient.invalidateQueries({ queryKey: CHAVE });
       queryClient.invalidateQueries({ queryKey: ["cadastros", "opcoes-usuario"] });
-      reset({ nome: "", setor: "", lider_id: null });
+      reset({ nome: "", setor: "", setor_id: null, lider_id: null });
       onConcluir();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -310,13 +349,40 @@ function FormEquipe({ equipe, pessoas, onConcluir }: { equipe: Equipe | null; pe
             <Input id="eq-nome" placeholder="Ex.: Infraestrutura" aria-invalid={!!errors.nome} aria-describedby="eq-nome-erro" {...register("nome")} />
             <ErroCampo id="eq-nome-erro" mensagem={errors.nome?.message} />
           </div>
-          <div className="grid gap-1.5">
-            <Label htmlFor="eq-setor">Setor</Label>
-            <Input id="eq-setor" placeholder="Ex.: Suporte" aria-describedby="eq-setor-ajuda" {...register("setor")} />
-            <p id="eq-setor-ajuda" className="text-[12px] text-muted-foreground">
-              Na próxima fase o setor passa a ser escolhido em Setores e números.
-            </p>
-          </div>
+          {setores ? (
+            <div className="grid gap-1.5">
+              <Label id="eq-setor-rotulo">Setor</Label>
+              <Controller
+                control={control}
+                name="setor_id"
+                render={({ field }) => {
+                  const itens = [{ value: "", label: "Sem setor" }, ...setores.map((x) => ({ value: x.id, label: x.nome }))];
+                  return (
+                    <Select items={itens} value={field.value ?? ""} onValueChange={(v) => field.onChange(v ? v : null)}>
+                      <SelectTrigger className="w-full" aria-labelledby="eq-setor-rotulo" aria-describedby="eq-setor-ajuda">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {itens.map((i) => (
+                          <SelectItem key={i.value || "sem"} value={i.value}>
+                            {i.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  );
+                }}
+              />
+              <p id="eq-setor-ajuda" className="text-[12px] text-muted-foreground">
+                Os setores são cadastrados em Configurações › Setores e números.
+              </p>
+            </div>
+          ) : (
+            <div className="grid gap-1.5">
+              <Label htmlFor="eq-setor">Setor</Label>
+              <Input id="eq-setor" placeholder="Ex.: Suporte" {...register("setor")} />
+            </div>
+          )}
           <div className="grid gap-1.5">
             <Label id="eq-lider-rotulo">Líder</Label>
             <Controller

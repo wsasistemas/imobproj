@@ -496,3 +496,37 @@ update imobproj.profiles p
      else 'analista'
    end
  where p.perfil is null and not p.is_super_admin;
+
+-- -----------------------------------------------------------------------------
+-- Fase 3: setores, números e fila (dados fictícios)
+-- -----------------------------------------------------------------------------
+-- Segundo número, ainda sem setor (para testar "ligar um número").
+insert into imobproj.wa_sessions (id, project_id, numero, openwa_url, api_key_secret_id, status, last_heartbeat) values
+  ('30000000-0000-0000-0000-000000000002', 'c0000000-0000-0000-0000-000000000014', '5519935003001',
+   'http://localhost:8002', null, 'desconectado', null)
+on conflict (id) do nothing;
+
+-- O trigger trg_setores_padroes cria horários, regras e mensagens de cada setor.
+insert into imobproj.setores (id, nome, gestor_id) values
+  ('b3000000-0000-0000-0000-000000000001', 'Suporte técnico', 'a0000000-0000-0000-0000-000000000003'),
+  ('b3000000-0000-0000-0000-000000000002', 'Implantação',     'a0000000-0000-0000-0000-000000000003')
+on conflict (id) do nothing;
+
+insert into imobproj.setor_numeros (session_id, setor_id) values
+  ('30000000-0000-0000-0000-000000000001', 'b3000000-0000-0000-0000-000000000001')
+on conflict (session_id) do nothing;
+
+update imobproj.teams set setor_id = 'b3000000-0000-0000-0000-000000000001'
+ where id = 'b2000000-0000-0000-0000-000000000001' and setor_id is null;
+update imobproj.teams set setor_id = 'b3000000-0000-0000-0000-000000000002'
+ where id = 'b2000000-0000-0000-0000-000000000002' and setor_id is null;
+
+insert into imobproj.setor_feriados (setor_id, data, descricao) values
+  ('b3000000-0000-0000-0000-000000000001', '2026-11-02', 'Finados'),
+  ('b3000000-0000-0000-0000-000000000001', '2026-11-20', 'Consciência Negra'),
+  ('b3000000-0000-0000-0000-000000000001', '2026-12-08', 'Nossa Senhora da Conceição (Campinas)')
+on conflict do nothing;
+
+-- Conversas que já existiam entram na fila do setor do número delas.
+update imobproj.wa_groups g set setor_id = imobproj.fn_setor_do_numero(g.session_id)
+ where g.setor_id is null and g.session_id is not null;
