@@ -4,7 +4,7 @@
 // e download por URL assinada de curta duração (RLS de storage: quem vê o projeto).
 import { createClient } from "@/lib/supabase/client";
 
-const BUCKET = "documentos";
+const BUCKET = "imobproj-documentos";
 
 export async function enviarArquivo(caminho: string, arquivo: File) {
   const supabase = createClient();

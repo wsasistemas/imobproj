@@ -56,7 +56,7 @@ async function arquivoExiste(supabase: Awaited<ReturnType<typeof createClient>>,
   const i = caminho.lastIndexOf("/");
   const pasta = caminho.slice(0, i);
   const nome = caminho.slice(i + 1);
-  const { data, error } = await supabase.storage.from("documentos").list(pasta, { search: nome, limit: 100 });
+  const { data, error } = await supabase.storage.from("imobproj-documentos").list(pasta, { search: nome, limit: 100 });
   return !error && (data ?? []).some((o) => o.name === nome);
 }
 

@@ -14,7 +14,7 @@ export const chavesAtas = {
   anexos: (projetoId: string, ataId: string) => ["projeto", projetoId, "atas", "anexos", ataId] as const,
 };
 
-export const BUCKET_ATAS = "documentos";
+export const BUCKET_ATAS = "imobproj-documentos";
 export const pastaAnexos = (projetoId: string, ataId: string) => `${projetoId}/atas/${ataId}`;
 
 export type ActionStatus = "aberta" | "em_andamento" | "concluida" | "cancelada";

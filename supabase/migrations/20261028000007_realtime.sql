@@ -18,10 +18,10 @@ begin
     if not exists (
       select 1 from pg_publication_tables
        where pubname = 'supabase_realtime'
-         and schemaname = 'public'
+         and schemaname = 'imobproj'
          and tablename = t
     ) then
-      execute format('alter publication supabase_realtime add table public.%I', t);
+      execute format('alter publication supabase_realtime add table imobproj.%I', t);
     end if;
   end loop;
 end

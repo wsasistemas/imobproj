@@ -35,8 +35,8 @@ import {
 import { clienteServico, mensagemDe, type Cliente } from "../_shared/supabase.ts";
 import { COLUNAS_SESSAO, credencialDaSessao, lerConfigOpenwa, lerSegredo, type ConfigOpenwa, type SessaoWa } from "../_shared/vault.ts";
 
-const BUCKET_WHATSAPP = "whatsapp";
-const BUCKET_EVIDENCIAS = "evidencias";
+const BUCKET_WHATSAPP = "imobproj-whatsapp";
+const BUCKET_EVIDENCIAS = "imobproj-evidencias";
 const MIDIA_MAX = 50 * 1_048_576;
 
 type Grupo = {
@@ -72,7 +72,7 @@ Deno.serve(async (req) => {
   let segredo: string | null;
   try {
     admin = clienteServico();
-    segredo = await lerSegredo(admin, "openwa_webhook_secret");
+    segredo = await lerSegredo(admin, "imobproj_openwa_webhook_secret");
   } catch (e) {
     logErro("openwa.webhook_config", { erro: mensagemDe(e) });
     return json(500, { erro: "Webhook sem configuração." });

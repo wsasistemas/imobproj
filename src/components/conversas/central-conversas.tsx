@@ -82,7 +82,7 @@ function Central({ projetoId, papel, userId }: Props) {
     };
     const canal = supabase
       .channel(`wa-lista-${projetoId}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "wa_messages", filter: `group_id=in.(${idsGrupos})` }, atualizar)
+      .on("postgres_changes", { event: "*", schema: "imobproj", table: "wa_messages", filter: `group_id=in.(${idsGrupos})` }, atualizar)
       .subscribe();
     return () => {
       if (timer.current) window.clearTimeout(timer.current);

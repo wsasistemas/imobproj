@@ -208,8 +208,8 @@ export async function excluirAta(entrada: { projectId: string; meetingId: string
   }
 
   const pasta = `${d.projectId}/atas/${ata.id}`;
-  const { data: arquivos } = await supabase.storage.from("documentos").list(pasta, { limit: 1000 });
-  if (arquivos?.length) await supabase.storage.from("documentos").remove(arquivos.map((a) => `${pasta}/${a.name}`));
+  const { data: arquivos } = await supabase.storage.from("imobproj-documentos").list(pasta, { limit: 1000 });
+  if (arquivos?.length) await supabase.storage.from("imobproj-documentos").remove(arquivos.map((a) => `${pasta}/${a.name}`));
 
   const { error } = await supabase.from("meetings").delete().eq("id", ata.id);
   if (error) return falha(erroAtas(error));
@@ -597,7 +597,7 @@ export async function removerAnexo(entrada: {
   if (!ata) return falha(SEM_ATA);
   if (ata.status === "aprovada") return falha("A ata já foi aprovada: anexos não podem ser removidos.");
   const { data, error } = await supabase.storage
-    .from("documentos")
+    .from("imobproj-documentos")
     .remove([`${v.data.projectId}/atas/${ata.id}/${v.data.nome}`]);
   if (error) return falha("Não foi possível remover o anexo.");
   if (!data?.length) return falha("Anexo não encontrado (ou você não tem permissão para removê-lo).");

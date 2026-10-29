@@ -13,10 +13,10 @@
 -- -----------------------------------------------------------------------------
 -- updated_at
 -- -----------------------------------------------------------------------------
-create or replace function public.set_updated_at()
+create or replace function imobproj.set_updated_at()
 returns trigger
 language plpgsql
-set search_path = public
+set search_path = imobproj, extensions
 as $$
 begin
   new.updated_at := now();
@@ -39,8 +39,8 @@ begin
   loop
     execute format(
       'create or replace trigger trg_%1$s_updated_at
-         before update on public.%1$I
-         for each row execute function public.set_updated_at()', t);
+         before update on imobproj.%1$I
+         for each row execute function imobproj.set_updated_at()', t);
   end loop;
 end
 $$;
@@ -48,11 +48,11 @@ $$;
 -- -----------------------------------------------------------------------------
 -- Conversão segura texto -> uuid (usada nas políticas de Storage)
 -- -----------------------------------------------------------------------------
-create or replace function public.fn_try_uuid(p_texto text)
+create or replace function imobproj.fn_try_uuid(p_texto text)
 returns uuid
 language plpgsql
 immutable
-set search_path = public
+set search_path = imobproj, extensions
 as $$
 begin
   return p_texto::uuid;
@@ -65,32 +65,32 @@ $$;
 -- Helpers de permissão (SECURITY DEFINER: leem profiles/project_members sem
 -- passar pela RLS, o que evita recursão nas políticas)
 -- -----------------------------------------------------------------------------
-create or replace function public.fn_is_super_admin()
+create or replace function imobproj.fn_is_super_admin()
 returns boolean
 language sql
 stable
 security definer
-set search_path = public
+set search_path = imobproj, extensions
 as $$
   select coalesce(
-    (select p.is_super_admin from public.profiles p where p.id = auth.uid()),
+    (select p.is_super_admin from imobproj.profiles p where p.id = auth.uid()),
     false
   );
 $$;
 
 -- Papel do usuário logado no projeto: 'super_admin' | role ativo | null
-create or replace function public.fn_user_role(p_project_id uuid)
+create or replace function imobproj.fn_user_role(p_project_id uuid)
 returns text
 language sql
 stable
 security definer
-set search_path = public
+set search_path = imobproj, extensions
 as $$
   select case
-    when public.fn_is_super_admin() then 'super_admin'
+    when imobproj.fn_is_super_admin() then 'super_admin'
     else (
       select pm.role::text
-        from public.project_members pm
+        from imobproj.project_members pm
        where pm.project_id = p_project_id
          and pm.user_id = auth.uid()
          and pm.ativo
@@ -99,90 +99,90 @@ as $$
   end;
 $$;
 
-create or replace function public.fn_is_member(p_project_id uuid)
+create or replace function imobproj.fn_is_member(p_project_id uuid)
 returns boolean
 language sql
 stable
 security definer
-set search_path = public
+set search_path = imobproj, extensions
 as $$
-  select public.fn_user_role(p_project_id) is not null;
+  select imobproj.fn_user_role(p_project_id) is not null;
 $$;
 
 -- true se o usuário tem um dos papéis informados no projeto.
 -- super_admin SEMPRE retorna true (não precisa constar na lista).
-create or replace function public.fn_has_role(p_project_id uuid, p_roles text[])
+create or replace function imobproj.fn_has_role(p_project_id uuid, p_roles text[])
 returns boolean
 language sql
 stable
 security definer
-set search_path = public
+set search_path = imobproj, extensions
 as $$
   select coalesce(
-    public.fn_user_role(p_project_id) = 'super_admin'
-    or public.fn_user_role(p_project_id) = any (p_roles),
+    imobproj.fn_user_role(p_project_id) = 'super_admin'
+    or imobproj.fn_user_role(p_project_id) = any (p_roles),
     false
   );
 $$;
 
 -- "Vê o projeto inteiro": todos os papéis, exceto prestador (que só vê as próprias OS).
-create or replace function public.fn_can_view_project(p_project_id uuid)
+create or replace function imobproj.fn_can_view_project(p_project_id uuid)
 returns boolean
 language sql
 stable
 security definer
-set search_path = public
+set search_path = imobproj, extensions
 as $$
-  select public.fn_has_role(p_project_id, array['diretor', 'gerente', 'usuario_chave', 'analista']);
+  select imobproj.fn_has_role(p_project_id, array['diretor', 'gerente', 'usuario_chave', 'analista']);
 $$;
 
 -- Resolve o project_id de registros filhos (SECURITY DEFINER para não depender da RLS)
-create or replace function public.fn_project_of_document(p_id uuid)
-returns uuid language sql stable security definer set search_path = public
-as $$ select project_id from public.documents where id = p_id; $$;
+create or replace function imobproj.fn_project_of_document(p_id uuid)
+returns uuid language sql stable security definer set search_path = imobproj, extensions
+as $$ select project_id from imobproj.documents where id = p_id; $$;
 
-create or replace function public.fn_project_of_wbs(p_id uuid)
-returns uuid language sql stable security definer set search_path = public
-as $$ select project_id from public.wbs_items where id = p_id; $$;
+create or replace function imobproj.fn_project_of_wbs(p_id uuid)
+returns uuid language sql stable security definer set search_path = imobproj, extensions
+as $$ select project_id from imobproj.wbs_items where id = p_id; $$;
 
-create or replace function public.fn_project_of_meeting(p_id uuid)
-returns uuid language sql stable security definer set search_path = public
-as $$ select project_id from public.meetings where id = p_id; $$;
+create or replace function imobproj.fn_project_of_meeting(p_id uuid)
+returns uuid language sql stable security definer set search_path = imobproj, extensions
+as $$ select project_id from imobproj.meetings where id = p_id; $$;
 
-create or replace function public.fn_project_of_os(p_id uuid)
-returns uuid language sql stable security definer set search_path = public
-as $$ select project_id from public.service_orders where id = p_id; $$;
+create or replace function imobproj.fn_project_of_os(p_id uuid)
+returns uuid language sql stable security definer set search_path = imobproj, extensions
+as $$ select project_id from imobproj.service_orders where id = p_id; $$;
 
-create or replace function public.fn_project_of_group(p_id uuid)
-returns uuid language sql stable security definer set search_path = public
-as $$ select project_id from public.wa_groups where id = p_id; $$;
+create or replace function imobproj.fn_project_of_group(p_id uuid)
+returns uuid language sql stable security definer set search_path = imobproj, extensions
+as $$ select project_id from imobproj.wa_groups where id = p_id; $$;
 
 -- O usuário logado é o executor da OS?
-create or replace function public.fn_is_os_executor(p_os_id uuid)
+create or replace function imobproj.fn_is_os_executor(p_os_id uuid)
 returns boolean
 language sql
 stable
 security definer
-set search_path = public
+set search_path = imobproj, extensions
 as $$
   select exists (
-    select 1 from public.service_orders so
+    select 1 from imobproj.service_orders so
      where so.id = p_os_id and so.executor_id = auth.uid()
   );
 $$;
 
 -- O usuário logado compartilha algum projeto (ativo) com p_user_id?
-create or replace function public.fn_shares_project(p_user_id uuid)
+create or replace function imobproj.fn_shares_project(p_user_id uuid)
 returns boolean
 language sql
 stable
 security definer
-set search_path = public
+set search_path = imobproj, extensions
 as $$
   select exists (
     select 1
-      from public.project_members a
-      join public.project_members b on b.project_id = a.project_id
+      from imobproj.project_members a
+      join imobproj.project_members b on b.project_id = a.project_id
      where a.user_id = auth.uid() and a.ativo
        and b.user_id = p_user_id
   );
@@ -190,15 +190,22 @@ $$;
 
 -- -----------------------------------------------------------------------------
 -- Signup: cria o profile a partir de auth.users
+-- O Auth é compartilhado com os outros sistemas IMOBSYSTEMS: só cria o profile de quem foi
+-- convidado pelo IMOBPROJ (metadado sistema = 'imobproj') e NUNCA deixa o erro subir — uma falha
+-- aqui abortaria o cadastro de usuários dos outros sistemas.
+-- Quem já tem conta em outro sistema entra por imobproj.fn_garantir_profile (convite da Equipe).
 -- -----------------------------------------------------------------------------
-create or replace function public.fn_handle_new_user()
+create or replace function imobproj.fn_handle_new_user()
 returns trigger
 language plpgsql
 security definer
-set search_path = public
+set search_path = imobproj, extensions
 as $$
 begin
-  insert into public.profiles (id, nome, email, telefone_whatsapp)
+  if coalesce(new.raw_user_meta_data ->> 'sistema', '') <> 'imobproj' then
+    return new;
+  end if;
+  insert into imobproj.profiles (id, nome, email, telefone_whatsapp)
   values (
     new.id,
     coalesce(
@@ -212,24 +219,57 @@ begin
   )
   on conflict (id) do nothing;
   return new;
+exception when others then
+  raise warning 'imobproj.fn_handle_new_user: %', sqlerrm;
+  return new;
 end;
 $$;
 
-create or replace trigger on_auth_user_created
+create or replace trigger imobproj_on_auth_user_created
   after insert on auth.users
-  for each row execute function public.fn_handle_new_user();
+  for each row execute function imobproj.fn_handle_new_user();
+
+-- Convite de alguém que já tem conta no Auth (outro sistema IMOBSYSTEMS): cria o profile do
+-- IMOBPROJ a partir de auth.users. Só service_role (Server Action de Equipe, depois de checar super admin).
+create or replace function imobproj.fn_garantir_profile(p_email text, p_nome text default null)
+returns uuid
+language plpgsql
+security definer
+set search_path = imobproj, extensions
+as $$
+declare
+  v_user auth.users;
+begin
+  select * into v_user from auth.users u where lower(u.email) = lower(btrim(p_email)) limit 1;
+  if not found then
+    return null;
+  end if;
+  insert into imobproj.profiles (id, nome, email, telefone_whatsapp)
+  values (
+    v_user.id,
+    coalesce(nullif(btrim(p_nome), ''), nullif(v_user.raw_user_meta_data ->> 'nome', ''),
+             nullif(v_user.raw_user_meta_data ->> 'name', ''), split_part(v_user.email, '@', 1)),
+    v_user.email,
+    nullif(v_user.raw_user_meta_data ->> 'telefone_whatsapp', '')
+  )
+  on conflict (id) do nothing;
+  return v_user.id;
+end;
+$$;
+revoke all on function imobproj.fn_garantir_profile(text, text) from public, anon, authenticated;
+grant execute on function imobproj.fn_garantir_profile(text, text) to service_role;
 
 -- Impede que um usuário comum se promova a super_admin.
-create or replace function public.fn_profiles_protege_super_admin()
+create or replace function imobproj.fn_profiles_protege_super_admin()
 returns trigger
 language plpgsql
-set search_path = public
+set search_path = imobproj, extensions
 as $$
 begin
   -- auth.uid() nulo = service_role / SQL direto / seed: liberado
   if auth.uid() is not null
      and new.is_super_admin is distinct from old.is_super_admin
-     and not public.fn_is_super_admin() then
+     and not imobproj.fn_is_super_admin() then
     raise exception 'Apenas super_admin pode alterar is_super_admin' using errcode = '42501';
   end if;
   return new;
@@ -237,8 +277,8 @@ end;
 $$;
 
 create or replace trigger trg_profiles_protege_super_admin
-  before update on public.profiles
-  for each row execute function public.fn_profiles_protege_super_admin();
+  before update on imobproj.profiles
+  for each row execute function imobproj.fn_profiles_protege_super_admin();
 
 -- -----------------------------------------------------------------------------
 -- Numeração sequencial por projeto
@@ -249,25 +289,25 @@ create or replace trigger trg_profiles_protege_super_admin
 -- Se o insert já trouxer "numero" (ex.: seed/importação), o contador avança até ele.
 -- TG_ARGV[0] = nome do contador.
 -- -----------------------------------------------------------------------------
-create or replace function public.fn_set_numero_sequencial()
+create or replace function imobproj.fn_set_numero_sequencial()
 returns trigger
 language plpgsql
 security definer
-set search_path = public
+set search_path = imobproj, extensions
 as $$
 declare
   v_contador text := tg_argv[0];
   v_numero   integer;
 begin
   if new.numero is null then
-    insert into public.project_counters as pc (project_id, contador, ultimo)
+    insert into imobproj.project_counters as pc (project_id, contador, ultimo)
     values (new.project_id, v_contador, 1)
     on conflict (project_id, contador)
       do update set ultimo = pc.ultimo + 1
     returning pc.ultimo into v_numero;
     new.numero := v_numero;
   else
-    insert into public.project_counters as pc (project_id, contador, ultimo)
+    insert into imobproj.project_counters as pc (project_id, contador, ultimo)
     values (new.project_id, v_contador, new.numero)
     on conflict (project_id, contador)
       do update set ultimo = greatest(pc.ultimo, excluded.ultimo);
@@ -277,25 +317,25 @@ end;
 $$;
 
 create or replace trigger trg_service_orders_numero
-  before insert on public.service_orders
-  for each row execute function public.fn_set_numero_sequencial('service_orders');
+  before insert on imobproj.service_orders
+  for each row execute function imobproj.fn_set_numero_sequencial('service_orders');
 
 create or replace trigger trg_meetings_numero
-  before insert on public.meetings
-  for each row execute function public.fn_set_numero_sequencial('meetings');
+  before insert on imobproj.meetings
+  for each row execute function imobproj.fn_set_numero_sequencial('meetings');
 
 create or replace trigger trg_baselines_numero
-  before insert on public.baselines
-  for each row execute function public.fn_set_numero_sequencial('baselines');
+  before insert on imobproj.baselines
+  for each row execute function imobproj.fn_set_numero_sequencial('baselines');
 
 -- -----------------------------------------------------------------------------
 -- Ordens de Serviço: regras de transição (complementam a RLS, que não
 -- consegue restringir colunas/valores por papel)
 -- -----------------------------------------------------------------------------
-create or replace function public.fn_os_guard()
+create or replace function imobproj.fn_os_guard()
 returns trigger
 language plpgsql
-set search_path = public
+set search_path = imobproj, extensions
 as $$
 declare
   v_role text;
@@ -305,7 +345,7 @@ begin
     return new;
   end if;
 
-  v_role := coalesce(public.fn_user_role(old.project_id), '');
+  v_role := coalesce(imobproj.fn_user_role(old.project_id), '');
 
   if new.project_id is distinct from old.project_id then
     raise exception 'Não é permitido mover uma OS para outro projeto' using errcode = '42501';
@@ -343,22 +383,22 @@ end;
 $$;
 
 create or replace trigger trg_service_orders_guard
-  before update on public.service_orders
-  for each row execute function public.fn_os_guard();
+  before update on imobproj.service_orders
+  for each row execute function imobproj.fn_os_guard();
 
 -- Histórico de status (insert e mudança de status)
-create or replace function public.fn_os_status_history()
+create or replace function imobproj.fn_os_status_history()
 returns trigger
 language plpgsql
 security definer
-set search_path = public
+set search_path = imobproj, extensions
 as $$
 begin
   if tg_op = 'INSERT' then
-    insert into public.os_status_history (os_id, de, para, autor_id, comentario)
+    insert into imobproj.os_status_history (os_id, de, para, autor_id, comentario)
     values (new.id, null, new.status, auth.uid(), 'OS criada');
   elsif new.status is distinct from old.status then
-    insert into public.os_status_history (os_id, de, para, autor_id, comentario)
+    insert into imobproj.os_status_history (os_id, de, para, autor_id, comentario)
     values (
       new.id, old.status, new.status, auth.uid(),
       case when new.status in ('aprovada', 'recusada') then new.aceite_comentario end
@@ -369,20 +409,20 @@ end;
 $$;
 
 create or replace trigger trg_service_orders_status_history
-  after insert or update of status on public.service_orders
-  for each row execute function public.fn_os_status_history();
+  after insert or update of status on imobproj.service_orders
+  for each row execute function imobproj.fn_os_status_history();
 
 -- -----------------------------------------------------------------------------
 -- Ciência em ata: quem não é gerente/super_admin só pode registrar ciente_em
 -- -----------------------------------------------------------------------------
-create or replace function public.fn_meeting_participant_guard()
+create or replace function imobproj.fn_meeting_participant_guard()
 returns trigger
 language plpgsql
-set search_path = public
+set search_path = imobproj, extensions
 as $$
 begin
   if auth.uid() is null
-     or public.fn_has_role(public.fn_project_of_meeting(old.meeting_id), array['gerente']) then
+     or imobproj.fn_has_role(imobproj.fn_project_of_meeting(old.meeting_id), array['gerente']) then
     return new;
   end if;
   if new.meeting_id is distinct from old.meeting_id
@@ -395,20 +435,20 @@ end;
 $$;
 
 create or replace trigger trg_meeting_participants_guard
-  before update on public.meeting_participants
-  for each row execute function public.fn_meeting_participant_guard();
+  before update on imobproj.meeting_participants
+  for each row execute function imobproj.fn_meeting_participant_guard();
 
 -- -----------------------------------------------------------------------------
 -- Integridade da EAP: pai e dependências no mesmo projeto
 -- -----------------------------------------------------------------------------
-create or replace function public.fn_wbs_item_valida()
+create or replace function imobproj.fn_wbs_item_valida()
 returns trigger
 language plpgsql
-set search_path = public
+set search_path = imobproj, extensions
 as $$
 begin
   if new.parent_id is not null
-     and public.fn_project_of_wbs(new.parent_id) is distinct from new.project_id then
+     and imobproj.fn_project_of_wbs(new.parent_id) is distinct from new.project_id then
     raise exception 'O item pai da EAP precisa ser do mesmo projeto' using errcode = '23514';
   end if;
   return new;
@@ -416,16 +456,16 @@ end;
 $$;
 
 create or replace trigger trg_wbs_items_valida
-  before insert or update of parent_id, project_id on public.wbs_items
-  for each row execute function public.fn_wbs_item_valida();
+  before insert or update of parent_id, project_id on imobproj.wbs_items
+  for each row execute function imobproj.fn_wbs_item_valida();
 
-create or replace function public.fn_wbs_dependency_valida()
+create or replace function imobproj.fn_wbs_dependency_valida()
 returns trigger
 language plpgsql
-set search_path = public
+set search_path = imobproj, extensions
 as $$
 begin
-  if public.fn_project_of_wbs(new.predecessora_id) is distinct from public.fn_project_of_wbs(new.sucessora_id) then
+  if imobproj.fn_project_of_wbs(new.predecessora_id) is distinct from imobproj.fn_project_of_wbs(new.sucessora_id) then
     raise exception 'Dependências só entre itens do mesmo projeto' using errcode = '23514';
   end if;
   return new;
@@ -433,8 +473,8 @@ end;
 $$;
 
 create or replace trigger trg_wbs_dependencies_valida
-  before insert or update on public.wbs_dependencies
-  for each row execute function public.fn_wbs_dependency_valida();
+  before insert or update on imobproj.wbs_dependencies
+  for each row execute function imobproj.fn_wbs_dependency_valida();
 
 -- -----------------------------------------------------------------------------
 -- Auditoria genérica
@@ -442,11 +482,11 @@ create or replace trigger trg_wbs_dependencies_valida
 --        UPDATE => {"old": ..., "new": ..., "alterados": [colunas]}
 -- project_id: id do próprio registro em projects; coluna project_id nas demais.
 -- -----------------------------------------------------------------------------
-create or replace function public.fn_audit()
+create or replace function imobproj.fn_audit()
 returns trigger
 language plpgsql
 security definer
-set search_path = public
+set search_path = imobproj, extensions
 as $$
 declare
   v_old  jsonb := case when tg_op in ('UPDATE', 'DELETE') then to_jsonb(old) end;
@@ -473,14 +513,14 @@ begin
     v_dados := jsonb_build_object('old', v_old);
   end if;
 
-  insert into public.audit_log (project_id, tabela, registro_id, acao, autor_id, dados)
+  insert into imobproj.audit_log (project_id, tabela, registro_id, acao, autor_id, dados)
   values (
     case when tg_table_name = 'projects'
          then (v_row ->> 'id')::uuid
          else (v_row ->> 'project_id')::uuid end,
     tg_table_name,
     (v_row ->> 'id')::uuid,
-    tg_op::public.audit_acao,
+    tg_op::imobproj.audit_acao,
     auth.uid(),
     v_dados
   );
@@ -496,8 +536,8 @@ begin
   loop
     execute format(
       'create or replace trigger trg_%1$s_audit
-         after insert or update or delete on public.%1$I
-         for each row execute function public.fn_audit()', t);
+         after insert or update or delete on imobproj.%1$I
+         for each row execute function imobproj.fn_audit()', t);
   end loop;
 end
 $$;
@@ -506,20 +546,20 @@ $$;
 -- Status da sessão OpenWA para membros (sem expor api_key_secret_id nem a URL)
 -- A tabela wa_sessions é restrita ao super_admin; o app usa esta função.
 -- -----------------------------------------------------------------------------
-create or replace function public.fn_wa_status(p_project_id uuid)
+create or replace function imobproj.fn_wa_status(p_project_id uuid)
 returns table (
   session_id      uuid,
   numero          text,
-  status          public.wa_session_status,
+  status          imobproj.wa_session_status,
   last_heartbeat  timestamptz
 )
 language sql
 stable
 security definer
-set search_path = public
+set search_path = imobproj, extensions
 as $$
   select s.id, s.numero, s.status, s.last_heartbeat
-    from public.wa_sessions s
+    from imobproj.wa_sessions s
    where s.project_id = p_project_id
-     and public.fn_can_view_project(p_project_id);
+     and imobproj.fn_can_view_project(p_project_id);
 $$;

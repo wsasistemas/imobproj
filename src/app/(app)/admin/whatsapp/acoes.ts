@@ -94,7 +94,7 @@ export async function testarConexao(): Promise<ResultadoAcao<ResultadoTeste>> {
   const url = (cfg as { url: string | null } | null)?.url;
   if (!url) return falha("Salve o endereço do OpenWA antes de testar.");
 
-  const { data: chave, error: erroChave } = await createAdminClient().rpc("fn_openwa_segredo", { p_nome: "openwa_api_key" });
+  const { data: chave, error: erroChave } = await createAdminClient().rpc("fn_openwa_segredo", { p_nome: "imobproj_openwa_api_key" });
   if (erroChave) return falha("Não foi possível ler a API key no Vault.");
   if (typeof chave !== "string" || !chave) return falha("Salve a API key antes de testar.");
 
@@ -178,9 +178,9 @@ export async function configurarReenvio(entrada: unknown): Promise<ResultadoAcao
   if (!anon) return falha("NEXT_PUBLIC_SUPABASE_ANON_KEY não configurada no servidor.");
 
   const supabase = await createClient();
-  const r1 = await supabase.rpc("fn_openwa_definir_segredo", { p_nome: "openwa_functions_url", p_valor: v.data.functionsUrl });
+  const r1 = await supabase.rpc("fn_openwa_definir_segredo", { p_nome: "imobproj_openwa_functions_url", p_valor: v.data.functionsUrl });
   if (r1.error) return falha(mensagemErroBanco(r1.error));
-  const r2 = await supabase.rpc("fn_openwa_definir_segredo", { p_nome: "openwa_anon_key", p_valor: anon });
+  const r2 = await supabase.rpc("fn_openwa_definir_segredo", { p_nome: "imobproj_openwa_anon_key", p_valor: anon });
   if (r2.error) return falha(mensagemErroBanco(r2.error));
   return sucesso(null);
 }

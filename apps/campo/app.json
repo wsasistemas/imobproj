@@ -1,31 +1,83 @@
 {
   "expo": {
-    "name": "campo",
-    "slug": "campo",
+    "name": "IMOBPROJ Campo",
+    "slug": "imobproj-campo",
+    "scheme": "imobprojcampo",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "backgroundColor": "#F5F6F8",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": false,
+      "bundleIdentifier": "br.com.wsasistemas.imobproj.campo",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
+      "package": "br.com.wsasistemas.imobproj.campo",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#1E2126",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false
     },
-    "web": {
-      "favicon": "./assets/favicon.png"
-    },
     "plugins": [
       "expo-router",
       "expo-status-bar",
       "expo-sqlite",
-      "expo-secure-store"
-    ]
+      [
+        "expo-secure-store",
+        {
+          "faceIDPermission": "Permitir que o $(PRODUCT_NAME) use o Face ID para desbloquear o app."
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Permitir que o $(PRODUCT_NAME) use a câmera para fotografar evidências das OS.",
+          "recordAudioAndroid": false
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Permitir que o $(PRODUCT_NAME) registre a localização do check-in e das evidências."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Permitir que o $(PRODUCT_NAME) anexe prints da galeria às OS.",
+          "cameraPermission": "Permitir que o $(PRODUCT_NAME) use a câmera para fotografar evidências das OS."
+        }
+      ],
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Permitir que o $(PRODUCT_NAME) use o Face ID para desbloquear o app."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#D52B36",
+          "defaultChannel": "os"
+        }
+      ],
+      "expo-image",
+      "expo-splash-screen"
+    ],
+    "experiments": {
+      "typedRoutes": false
+    },
+    "extra": {
+      "eas": {
+        "projectId": ""
+      }
+    }
   }
 }

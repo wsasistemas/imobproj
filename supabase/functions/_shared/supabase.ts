@@ -5,7 +5,8 @@
 
 import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2";
 
-export type Cliente = SupabaseClient;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type Cliente = SupabaseClient<any, "imobproj">;
 
 function env(nome: string): string {
   const v = Deno.env.get(nome);
@@ -13,7 +14,8 @@ function env(nome: string): string {
   return v;
 }
 
-const semSessao = { auth: { autoRefreshToken: false, persistSession: false } } as const;
+// Banco compartilhado pelos sistemas IMOBSYSTEMS: as tabelas do IMOBPROJ ficam no schema "imobproj".
+const semSessao = { db: { schema: "imobproj" }, auth: { autoRefreshToken: false, persistSession: false } } as const;
 
 export function clienteServico(): Cliente {
   return createClient(env("SUPABASE_URL"), env("SUPABASE_SERVICE_ROLE_KEY"), semSessao);

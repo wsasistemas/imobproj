@@ -13,14 +13,14 @@
 --    continua valendo; a função só acrescenta a atomicidade e a checagem de papel.
 -- =============================================================================
 
-alter table public.service_orders
+alter table imobproj.service_orders
   add column if not exists horas_previstas numeric(8,2)
     check (horas_previstas is null or horas_previstas >= 0);
 
-comment on column public.service_orders.horas_previstas is
+comment on column imobproj.service_orders.horas_previstas is
   'Horas previstas na abertura da OS (planejamento). As horas apontadas/aprovadas ficam em "horas".';
 
-create or replace function public.fn_os_marcar_fora_escopo(
+create or replace function imobproj.fn_os_marcar_fora_escopo(
   p_os_id     uuid,
   p_descricao text,
   p_horas     numeric,
@@ -29,7 +29,7 @@ create or replace function public.fn_os_marcar_fora_escopo(
 returns uuid
 language plpgsql
 security invoker
-set search_path = public
+set search_path = imobproj, extensions
 as $$
 declare
   v_project_id uuid;
@@ -48,7 +48,7 @@ begin
 
   select so.project_id, so.fora_escopo
     into v_project_id, v_fora
-    from public.service_orders so
+    from imobproj.service_orders so
    where so.id = p_os_id
    for update;
 
@@ -56,7 +56,7 @@ begin
     raise exception 'OS não encontrada' using errcode = 'P0002';
   end if;
 
-  if not public.fn_has_role(v_project_id, array['gerente', 'diretor', 'usuario_chave']) then
+  if not imobproj.fn_has_role(v_project_id, array['gerente', 'diretor', 'usuario_chave']) then
     raise exception 'Somente gerente, diretor ou usuário-chave podem marcar OS fora do escopo'
       using errcode = '42501';
   end if;
@@ -65,11 +65,11 @@ begin
     raise exception 'Esta OS já está marcada como fora do escopo' using errcode = '23514';
   end if;
 
-  update public.service_orders
+  update imobproj.service_orders
      set fora_escopo = true
    where id = p_os_id;
 
-  insert into public.scope_proposals (project_id, os_id, descricao, horas, valor, status)
+  insert into imobproj.scope_proposals (project_id, os_id, descricao, horas, valor, status)
   values (v_project_id, p_os_id, btrim(p_descricao), p_horas, p_valor, 'pendente')
   returning id into v_proposta;
 
@@ -77,5 +77,5 @@ begin
 end;
 $$;
 
-revoke all on function public.fn_os_marcar_fora_escopo(uuid, text, numeric, numeric) from public, anon;
-grant execute on function public.fn_os_marcar_fora_escopo(uuid, text, numeric, numeric) to authenticated;
+revoke all on function imobproj.fn_os_marcar_fora_escopo(uuid, text, numeric, numeric) from public, anon;
+grant execute on function imobproj.fn_os_marcar_fora_escopo(uuid, text, numeric, numeric) to authenticated;

@@ -20,7 +20,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 async function ehCron(admin: Cliente, req: Request): Promise<boolean> {
   const recebido = req.headers.get("x-openwa-cron");
   if (!recebido) return false;
-  const segredo = await lerSegredo(admin, "openwa_cron_secret");
+  const segredo = await lerSegredo(admin, "imobproj_openwa_cron_secret");
   return !!segredo && iguaisTempoConstante(recebido.trim(), segredo);
 }
 

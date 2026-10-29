@@ -20,7 +20,7 @@ const uuid = z.string().regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-
 
 const FUSO = "America/Sao_Paulo";
 const TITULO_ATA_PENDENCIAS = "Pendências do WhatsApp";
-const BUCKET_ANEXOS = "documentos";
+const BUCKET_ANEXOS = "imobproj-documentos";
 
 function erroPermissao(e: unknown) {
   return falha(e instanceof Error ? e.message : "Você não tem permissão para esta ação neste projeto.");

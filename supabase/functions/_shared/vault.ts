@@ -3,11 +3,11 @@
 import type { Cliente } from "./supabase.ts";
 
 export type NomeSegredo =
-  | "openwa_api_key"
-  | "openwa_webhook_secret"
-  | "openwa_functions_url"
-  | "openwa_anon_key"
-  | "openwa_cron_secret";
+  | "imobproj_openwa_api_key"
+  | "imobproj_openwa_webhook_secret"
+  | "imobproj_openwa_functions_url"
+  | "imobproj_openwa_anon_key"
+  | "imobproj_openwa_cron_secret";
 
 export async function lerSegredo(admin: Cliente, nome: NomeSegredo): Promise<string | null> {
   const { data, error } = await admin.rpc("fn_openwa_segredo", { p_nome: nome });
@@ -25,7 +25,7 @@ export async function lerConfigOpenwa(admin: Cliente): Promise<ConfigOpenwa> {
   return {
     ativo: linha?.ativo ?? false,
     url: linha?.url?.trim() || null,
-    apiKey: await lerSegredo(admin, "openwa_api_key"),
+    apiKey: await lerSegredo(admin, "imobproj_openwa_api_key"),
   };
 }
 

@@ -5,8 +5,8 @@ project_id = "imobproj"
 [api]
 enabled = true
 port = 56321
-schemas = ["public", "graphql_public"]
-extra_search_path = ["public", "extensions"]
+schemas = ["public", "graphql_public", "imobproj"]
+extra_search_path = ["public", "extensions", "imobproj"]
 max_rows = 1000
 
 [db]

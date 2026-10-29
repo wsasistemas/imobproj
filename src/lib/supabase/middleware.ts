@@ -1,6 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { SUPABASE_ANON_KEY, SUPABASE_URL, supabaseConfigurado } from "./env";
+import { SUPABASE_ANON_KEY, SUPABASE_SCHEMA, SUPABASE_URL, supabaseConfigurado } from "./env";
 
 /** Rotas abertas: entrada, recuperação de senha e o retorno do link enviado por e-mail. */
 const ROTAS_PUBLICAS = ["/login", "/redefinir-senha", "/auth"];
@@ -32,6 +32,7 @@ export async function updateSession(request: NextRequest) {
   }
 
   const supabase = createServerClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    db: { schema: SUPABASE_SCHEMA },
     cookies: {
       getAll() {
         return request.cookies.getAll();

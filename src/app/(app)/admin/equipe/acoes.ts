@@ -50,7 +50,8 @@ async function origemDaRequisicao() {
 async function enviarConvite(email: string, nome: string) {
   const origem = await origemDaRequisicao();
   return createAdminClient().auth.admin.inviteUserByEmail(email, {
-    data: { nome },
+    // "sistema" faz o trigger imobproj_on_auth_user_created criar o profile (o Auth é compartilhado).
+    data: { nome, sistema: "imobproj" },
     redirectTo: `${origem}/auth/callback?next=/redefinir-senha`,
   });
 }
@@ -106,7 +107,25 @@ export async function adicionarMembro(entrada: unknown): Promise<ResultadoAcao<R
     return sucesso({ tipo: "adicionado", mensagem: `${quem} foi adicionado(a) ao projeto.` });
   }
 
-  // Ninguém com este e-mail: convite pelo Supabase Auth. O trigger on_auth_user_created cria o profile.
+  // Conta que já existe no Auth (de outro sistema IMOBSYSTEMS): cria o profile do IMOBPROJ e vincula,
+  // sem convite — a pessoa entra com a senha que já tem.
+  const { data: idExistente, error: erroExistente } = await createAdminClient().rpc("fn_garantir_profile", {
+    p_email: email,
+    p_nome: nome,
+  });
+  if (erroExistente) return falha(mensagemErroBanco(erroExistente));
+  if (idExistente) {
+    const { error } = await supabase
+      .from("project_members")
+      .insert({ project_id: projectId, user_id: idExistente as string, role: papel, ativo: true });
+    if (error) return falha(mensagemErroBanco(error));
+    return sucesso({
+      tipo: "adicionado",
+      mensagem: `${nome || email} já tinha conta nos sistemas IMOBSYSTEMS e foi adicionado(a) ao projeto (entra com a senha atual).`,
+    });
+  }
+
+  // Ninguém com este e-mail: convite pelo Supabase Auth. O trigger imobproj_on_auth_user_created cria o profile.
   let convite;
   try {
     convite = await enviarConvite(email, nome);

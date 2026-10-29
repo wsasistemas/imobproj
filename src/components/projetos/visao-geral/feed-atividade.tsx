@@ -70,7 +70,7 @@ export function FeedAtividade({ projetoId, papel }: { projetoId: string; papel: 
       .channel(`audit-log-${projetoId}`)
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "audit_log", filter: `project_id=eq.${projetoId}` },
+        { event: "INSERT", schema: "imobproj", table: "audit_log", filter: `project_id=eq.${projetoId}` },
         async (payload) => {
           const item = payload.new as RegistroAuditoria;
           const atual = queryClient.getQueryData<Feed>(["projeto", projetoId, "visao-geral", "atividade"]);

@@ -236,7 +236,7 @@ export function Chat({
       .channel(`wa-mensagens-${grupo.id}`)
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "wa_messages", filter: `group_id=eq.${grupo.id}` },
+        { event: "INSERT", schema: "imobproj", table: "wa_messages", filter: `group_id=eq.${grupo.id}` },
         (payload) => {
           const row = payload.new as MensagemWa;
           aplicar(row, "INSERT");
@@ -249,7 +249,7 @@ export function Chat({
       )
       .on(
         "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "wa_messages", filter: `group_id=eq.${grupo.id}` },
+        { event: "UPDATE", schema: "imobproj", table: "wa_messages", filter: `group_id=eq.${grupo.id}` },
         (payload) => aplicar(payload.new as MensagemWa, "UPDATE"),
       )
       .subscribe((status) => setAoVivo(status === "SUBSCRIBED"));

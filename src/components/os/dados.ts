@@ -21,7 +21,7 @@ export const chavesOs = {
   medicao: (projetoId: string, mes: string) => ["projeto", projetoId, "os", "medicao", mes] as const,
 };
 
-export const BUCKET_EVIDENCIAS = "evidencias";
+export const BUCKET_EVIDENCIAS = "imobproj-evidencias";
 
 type Ref<T> = T | T[] | null;
 /** PostgREST devolve objeto ou array conforme a FK; normaliza para objeto. */

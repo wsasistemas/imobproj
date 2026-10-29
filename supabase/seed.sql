@@ -18,7 +18,7 @@
 -- =============================================================================
 
 -- -----------------------------------------------------------------------------
--- Auth: usuários + identidades (o trigger on_auth_user_created cria os profiles)
+-- Auth: usuários + identidades (o trigger imobproj_on_auth_user_created cria os profiles)
 -- -----------------------------------------------------------------------------
 insert into auth.users (
   instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
@@ -30,7 +30,7 @@ select
   '00000000-0000-0000-0000-000000000000'::uuid, u.id, 'authenticated', 'authenticated', u.email,
   extensions.crypt('Imobproj@2026', extensions.gen_salt('bf')), now(),
   '{"provider":"email","providers":["email"]}'::jsonb,
-  jsonb_build_object('nome', u.nome, 'telefone_whatsapp', u.fone),
+  jsonb_build_object('nome', u.nome, 'telefone_whatsapp', u.fone, 'sistema', 'imobproj'),
   now(), now(),
   '', '', '', '', '', '', '', ''
 from (values
@@ -59,13 +59,13 @@ on conflict do nothing;
 -- -----------------------------------------------------------------------------
 -- Organizações e perfis
 -- -----------------------------------------------------------------------------
-insert into public.organizations (id, nome, tipo, cnpj) values
+insert into imobproj.organizations (id, nome, tipo, cnpj) values
   ('b0000000-0000-0000-0000-000000000001', 'WSA Sistemas',               'executora', '11.111.111/0001-11'),
   ('b0000000-0000-0000-0000-000000000002', 'Calper',                     'cliente',   '22.222.222/0001-22'),
   ('b0000000-0000-0000-0000-000000000003', 'TecnoCampo Serviços de TI',  'prestador', '33.333.333/0001-33')
 on conflict (id) do nothing;
 
-update public.profiles p
+update imobproj.profiles p
    set is_super_admin  = (p.id = 'a0000000-0000-0000-0000-000000000001'),
        organization_id = v.org
   from (values
@@ -81,13 +81,13 @@ update public.profiles p
 -- -----------------------------------------------------------------------------
 -- Projeto e equipe
 -- -----------------------------------------------------------------------------
-insert into public.projects (id, codigo, nome, cliente_org_id, executora_org_id, inicio, fim, status, horas_orcadas) values
+insert into imobproj.projects (id, codigo, nome, cliente_org_id, executora_org_id, inicio, fim, status, horas_orcadas) values
   ('c0000000-0000-0000-0000-000000000014', 'PRJ-014', 'Portal de Tickets Calper',
    'b0000000-0000-0000-0000-000000000002', 'b0000000-0000-0000-0000-000000000001',
    '2026-08-03', '2026-12-18', 'execucao', 544)
 on conflict (id) do nothing;
 
-insert into public.project_members (project_id, user_id, role) values
+insert into imobproj.project_members (project_id, user_id, role) values
   ('c0000000-0000-0000-0000-000000000014', 'a0000000-0000-0000-0000-000000000002', 'diretor'),
   ('c0000000-0000-0000-0000-000000000014', 'a0000000-0000-0000-0000-000000000003', 'gerente'),
   ('c0000000-0000-0000-0000-000000000014', 'a0000000-0000-0000-0000-000000000004', 'usuario_chave'),
@@ -98,7 +98,7 @@ on conflict (project_id, user_id) do nothing;
 -- -----------------------------------------------------------------------------
 -- EAP: 4 fases com subitens (horas orçadas nas folhas = 544 h)
 -- -----------------------------------------------------------------------------
-insert into public.wbs_items (id, project_id, parent_id, codigo, titulo, responsavel_id, horas_orcadas, inicio, fim, ordem, is_milestone, is_fase) values
+insert into imobproj.wbs_items (id, project_id, parent_id, codigo, titulo, responsavel_id, horas_orcadas, inicio, fim, ordem, is_milestone, is_fase) values
   -- Fase 1
   ('d0000000-0000-0000-0000-000000000100', 'c0000000-0000-0000-0000-000000000014', null, '1', 'Iniciação e Planejamento',
    'a0000000-0000-0000-0000-000000000003', 0, '2026-08-03', '2026-08-28', 100, false, true),
@@ -113,7 +113,7 @@ insert into public.wbs_items (id, project_id, parent_id, codigo, titulo, respons
    'a0000000-0000-0000-0000-000000000003', 0, '2026-11-30', '2026-12-18', 400, false, true)
 on conflict (id) do nothing;
 
-insert into public.wbs_items (id, project_id, parent_id, codigo, titulo, responsavel_id, horas_orcadas, inicio, fim, ordem, is_milestone, is_fase) values
+insert into imobproj.wbs_items (id, project_id, parent_id, codigo, titulo, responsavel_id, horas_orcadas, inicio, fim, ordem, is_milestone, is_fase) values
   ('d0000000-0000-0000-0000-000000000101', 'c0000000-0000-0000-0000-000000000014', 'd0000000-0000-0000-0000-000000000100', '1.1', 'Termo de abertura e kickoff',
    'a0000000-0000-0000-0000-000000000003', 16, '2026-08-03', '2026-08-07', 101, false, false),
   ('d0000000-0000-0000-0000-000000000102', 'c0000000-0000-0000-0000-000000000014', 'd0000000-0000-0000-0000-000000000100', '1.2', 'Levantamento de requisitos',
@@ -145,7 +145,7 @@ insert into public.wbs_items (id, project_id, parent_id, codigo, titulo, respons
    'a0000000-0000-0000-0000-000000000002', 0, '2026-12-18', '2026-12-18', 403, true, false)
 on conflict (id) do nothing;
 
-insert into public.wbs_dependencies (id, predecessora_id, sucessora_id, tipo, lag_dias) values
+insert into imobproj.wbs_dependencies (id, predecessora_id, sucessora_id, tipo, lag_dias) values
   ('90000000-0000-0000-0000-000000000001', 'd0000000-0000-0000-0000-000000000101', 'd0000000-0000-0000-0000-000000000102', 'FS', 0),
   ('90000000-0000-0000-0000-000000000002', 'd0000000-0000-0000-0000-000000000102', 'd0000000-0000-0000-0000-000000000103', 'FS', 5),
   ('90000000-0000-0000-0000-000000000003', 'd0000000-0000-0000-0000-000000000103', 'd0000000-0000-0000-0000-000000000201', 'FS', 0),
@@ -159,7 +159,7 @@ insert into public.wbs_dependencies (id, predecessora_id, sucessora_id, tipo, la
 on conflict (id) do nothing;
 
 -- Linha de base nº 1 (congelada no fim do planejamento)
-insert into public.baselines (id, project_id, numero, congelada_em, snapshot)
+insert into imobproj.baselines (id, project_id, numero, congelada_em, snapshot)
 select '60000000-0000-0000-0000-000000000001', 'c0000000-0000-0000-0000-000000000014', 1,
        '2026-08-28 18:00:00-03',
        jsonb_agg(jsonb_build_object(
@@ -167,12 +167,12 @@ select '60000000-0000-0000-0000-000000000001', 'c0000000-0000-0000-0000-00000000
          'inicio', w.inicio, 'fim', w.fim, 'horas_orcadas', w.horas_orcadas,
          'is_fase', w.is_fase, 'is_milestone', w.is_milestone
        ) order by w.ordem)
-  from public.wbs_items w
+  from imobproj.wbs_items w
  where w.project_id = 'c0000000-0000-0000-0000-000000000014'
 on conflict (id) do nothing;
 
 -- Uma remarcação registrada (painel de atendimento atrasou 1 semana)
-insert into public.schedule_changes (id, wbs_item_id, autor_id, de, para, justificativa) values
+insert into imobproj.schedule_changes (id, wbs_item_id, autor_id, de, para, justificativa) values
   ('6a000000-0000-0000-0000-000000000001', 'd0000000-0000-0000-0000-000000000302', 'a0000000-0000-0000-0000-000000000003',
    '{"inicio":"2026-09-28","fim":"2026-11-06"}', '{"inicio":"2026-10-05","fim":"2026-11-13"}',
    'Protótipo recusado na revisão (OS 236); início do painel deslocado em uma semana.')
@@ -182,7 +182,7 @@ on conflict (id) do nothing;
 -- Ordens de Serviço: inseridas no estado inicial e depois movimentadas,
 -- para que os triggers gerem o histórico (os_status_history) e a auditoria.
 -- -----------------------------------------------------------------------------
-insert into public.service_orders (
+insert into imobproj.service_orders (
   id, project_id, numero, wbs_item_id, executor_id, titulo, descricao,
   agendada_inicio, agendada_fim, status, fora_escopo, origem
 ) values
@@ -210,7 +210,7 @@ insert into public.service_orders (
 on conflict (id) do nothing;
 
 -- Em execução (check-in)
-update public.service_orders
+update imobproj.service_orders
    set status = 'em_execucao',
        checkin_at = agendada_inicio + interval '5 minutes',
        checkin_lat = -23.5505, checkin_lng = -46.6333
@@ -220,7 +220,7 @@ update public.service_orders
    and status = 'agendada';
 
 -- Check-out e envio para aceite
-update public.service_orders
+update imobproj.service_orders
    set status = 'aguardando_aceite',
        checkout_at = agendada_fim,
        horas = case id
@@ -234,23 +234,23 @@ update public.service_orders
    and status = 'em_execucao';
 
 -- Aceites
-update public.service_orders
+update imobproj.service_orders
    set status = 'aprovada', aceite_por = 'a0000000-0000-0000-0000-000000000004',
        aceite_em = '2026-08-14 10:00-03', aceite_comentario = 'Requisitos validados com a central.'
  where id = 'e0000000-0000-0000-0000-000000000231' and status = 'aguardando_aceite';
 
-update public.service_orders
+update imobproj.service_orders
    set status = 'aprovada', aceite_por = 'a0000000-0000-0000-0000-000000000002',
        aceite_em = '2026-09-03 16:30-03', aceite_comentario = 'De acordo.'
  where id = 'e0000000-0000-0000-0000-000000000232' and status = 'aguardando_aceite';
 
-update public.service_orders
+update imobproj.service_orders
    set status = 'recusada', aceite_por = 'a0000000-0000-0000-0000-000000000004',
        aceite_em = '2026-09-17 11:00-03',
        aceite_comentario = 'Protótipo não contempla o fluxo de reabertura de ticket. Refazer.'
  where id = 'e0000000-0000-0000-0000-000000000236' and status = 'aguardando_aceite';
 
-insert into public.os_evidences (id, os_id, tipo, storage_path, captured_at, lat, lng, origem) values
+insert into imobproj.os_evidences (id, os_id, tipo, storage_path, captured_at, lat, lng, origem) values
   ('80000000-0000-0000-0000-000000000001', 'e0000000-0000-0000-0000-000000000231', 'arquivo',
    'c0000000-0000-0000-0000-000000000014/e0000000-0000-0000-0000-000000000231/requisitos-v1.pdf', '2026-08-13 17:40-03', null, null, 'portal'),
   ('80000000-0000-0000-0000-000000000002', 'e0000000-0000-0000-0000-000000000233', 'foto',
@@ -261,7 +261,7 @@ insert into public.os_evidences (id, os_id, tipo, storage_path, captured_at, lat
    'c0000000-0000-0000-0000-000000000014/e0000000-0000-0000-0000-000000000233/assinatura-cliente.png', '2026-10-21 16:55-03', -23.5505, -46.6333, 'app')
 on conflict (id) do nothing;
 
-insert into public.scope_proposals (id, project_id, os_id, descricao, horas, valor, status) values
+insert into imobproj.scope_proposals (id, project_id, os_id, descricao, horas, valor, status) values
   ('8a000000-0000-0000-0000-000000000001', 'c0000000-0000-0000-0000-000000000014', 'e0000000-0000-0000-0000-000000000237',
    'Relatório de SLA por filial com exportação em PDF (não previsto no escopo).', 16, 2400.00, 'pendente')
 on conflict (id) do nothing;
@@ -269,7 +269,7 @@ on conflict (id) do nothing;
 -- -----------------------------------------------------------------------------
 -- Documentos e comentários
 -- -----------------------------------------------------------------------------
-insert into public.documents (id, project_id, tipo, titulo, versao, status, storage_path, conteudo) values
+insert into imobproj.documents (id, project_id, tipo, titulo, versao, status, storage_path, conteudo) values
   ('10000000-0000-0000-0000-000000000001', 'c0000000-0000-0000-0000-000000000014', 'termo_abertura', 'Termo de Abertura do Projeto', '1.0', 'aprovado',
    'c0000000-0000-0000-0000-000000000014/10000000-0000-0000-0000-000000000001/termo-abertura-v1.pdf', '{}'),
   ('10000000-0000-0000-0000-000000000002', 'c0000000-0000-0000-0000-000000000014', 'escopo', 'Declaração de Escopo', '1.2', 'aprovado',
@@ -282,7 +282,7 @@ insert into public.documents (id, project_id, tipo, titulo, versao, status, stor
    '{"requisitos":[{"id":"RF-01","texto":"Abrir ticket com anexos"},{"id":"RF-02","texto":"Painel com fila por SLA"},{"id":"RF-03","texto":"Notificação por WhatsApp"}]}')
 on conflict (id) do nothing;
 
-insert into public.document_comments (id, document_id, autor_id, texto, resolvido) values
+insert into imobproj.document_comments (id, document_id, autor_id, texto, resolvido) values
   ('11000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000004',
    'Faltou a etapa de aprovação do supervisor para chamados acima de R$ 5 mil.', false),
   ('11000000-0000-0000-0000-000000000002', '10000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000003',
@@ -294,7 +294,7 @@ on conflict (id) do nothing;
 -- -----------------------------------------------------------------------------
 -- Atas (5), participantes e encaminhamentos
 -- -----------------------------------------------------------------------------
-insert into public.meetings (id, project_id, numero, titulo, data, inicio, fim, local, pauta, decisoes, status, redator_id) values
+insert into imobproj.meetings (id, project_id, numero, titulo, data, inicio, fim, local, pauta, decisoes, status, redator_id) values
   ('f0000000-0000-0000-0000-000000000001', 'c0000000-0000-0000-0000-000000000014', 1, 'Kickoff do projeto', '2026-08-04', '09:00', '10:30', 'Calper · Sala 3',
    '["Apresentação das equipes","Objetivos e escopo","Cronograma macro","Canais de comunicação"]',
    '["Reuniões de status semanais às sextas","Grupos de WhatsApp por equipe via OpenWA"]', 'aprovada', 'a0000000-0000-0000-0000-000000000003'),
@@ -312,14 +312,14 @@ insert into public.meetings (id, project_id, numero, titulo, data, inicio, fim, 
    '[]', 'rascunho', 'a0000000-0000-0000-0000-000000000003')
 on conflict (id) do nothing;
 
-insert into public.meeting_participants (meeting_id, user_id, presenca, ciente_em)
+insert into imobproj.meeting_participants (meeting_id, user_id, presenca, ciente_em)
 select m.id, p.user_id,
        case when m.numero = 3 and p.user_id = 'a0000000-0000-0000-0000-000000000002'::uuid
-            then 'ausente'::public.presenca_tipo else 'presente'::public.presenca_tipo end,
+            then 'ausente'::imobproj.presenca_tipo else 'presente'::imobproj.presenca_tipo end,
        case when m.status = 'aprovada' then m.data::timestamptz + interval '1 day'
             when m.status = 'publicada' and p.user_id = 'a0000000-0000-0000-0000-000000000004'::uuid
               then m.data::timestamptz + interval '1 day' end
-  from public.meetings m
+  from imobproj.meetings m
  cross join (values
    ('a0000000-0000-0000-0000-000000000002'::uuid),
    ('a0000000-0000-0000-0000-000000000003'::uuid),
@@ -330,11 +330,11 @@ select m.id, p.user_id,
 on conflict (meeting_id, user_id) do nothing;
 
 -- prestador participou do status semanal
-insert into public.meeting_participants (meeting_id, user_id, presenca) values
+insert into imobproj.meeting_participants (meeting_id, user_id, presenca) values
   ('f0000000-0000-0000-0000-000000000005', 'a0000000-0000-0000-0000-000000000006', 'presente')
 on conflict (meeting_id, user_id) do nothing;
 
-insert into public.meeting_actions (id, meeting_id, acao, responsavel_id, prazo, status, wbs_item_id, vincular_cronograma) values
+insert into imobproj.meeting_actions (id, meeting_id, acao, responsavel_id, prazo, status, wbs_item_id, vincular_cronograma) values
   ('70000000-0000-0000-0000-000000000001', 'f0000000-0000-0000-0000-000000000001', 'Criar grupos de WhatsApp por equipe',
    'a0000000-0000-0000-0000-000000000003', '2026-08-07', 'concluida', null, false),
   ('70000000-0000-0000-0000-000000000002', 'f0000000-0000-0000-0000-000000000002', 'Enviar planilha de categorias de chamados',
@@ -352,7 +352,7 @@ on conflict (id) do nothing;
 -- -----------------------------------------------------------------------------
 -- Agenda (calendar_events)
 -- -----------------------------------------------------------------------------
-insert into public.calendar_events (id, project_id, tipo, wbs_item_id, os_id, meeting_id, titulo, inicio, fim, local) values
+insert into imobproj.calendar_events (id, project_id, tipo, wbs_item_id, os_id, meeting_id, titulo, inicio, fim, local) values
   ('50000000-0000-0000-0000-000000000001', 'c0000000-0000-0000-0000-000000000014', 'reuniao', null, null, 'f0000000-0000-0000-0000-000000000001',
    'Kickoff do projeto', '2026-08-04 09:00-03', '2026-08-04 10:30-03', 'Calper · Sala 3'),
   ('50000000-0000-0000-0000-000000000002', 'c0000000-0000-0000-0000-000000000014', 'reuniao', null, null, 'f0000000-0000-0000-0000-000000000004',
@@ -378,12 +378,12 @@ on conflict (id) do nothing;
 -- -----------------------------------------------------------------------------
 -- WhatsApp: 1 sessão OpenWA, 4 grupos por equipe, membros e mensagens
 -- -----------------------------------------------------------------------------
-insert into public.wa_sessions (id, project_id, numero, openwa_url, api_key_secret_id, status, last_heartbeat) values
+insert into imobproj.wa_sessions (id, project_id, numero, openwa_url, api_key_secret_id, status, last_heartbeat) values
   ('30000000-0000-0000-0000-000000000001', 'c0000000-0000-0000-0000-000000000014', '5511900000099',
    'http://localhost:8002', null, 'conectado', now())
 on conflict (id) do nothing;
 
-insert into public.wa_groups (id, project_id, session_id, equipe, nome, wa_group_id, ativo, auto_evidencia, auto_os) values
+insert into imobproj.wa_groups (id, project_id, session_id, equipe, nome, wa_group_id, ativo, auto_evidencia, auto_os) values
   ('20000000-0000-0000-0000-000000000001', 'c0000000-0000-0000-0000-000000000014', '30000000-0000-0000-0000-000000000001',
    'Gestão', 'PRJ-014 · Gestão', '120363000000000001@g.us', true, false, false),
   ('20000000-0000-0000-0000-000000000002', 'c0000000-0000-0000-0000-000000000014', '30000000-0000-0000-0000-000000000001',
@@ -394,7 +394,7 @@ insert into public.wa_groups (id, project_id, session_id, equipe, nome, wa_group
    'Usuários-chave', 'PRJ-014 · Usuários-chave', '120363000000000004@g.us', true, false, true)
 on conflict (id) do nothing;
 
-insert into public.wa_group_members (group_id, user_id, telefone, is_admin)
+insert into imobproj.wa_group_members (group_id, user_id, telefone, is_admin)
 select g.id, p.id, p.telefone_whatsapp, p.id = 'a0000000-0000-0000-0000-000000000003'::uuid
   from (values
     ('20000000-0000-0000-0000-000000000001'::uuid, 'a0000000-0000-0000-0000-000000000002'::uuid),
@@ -409,12 +409,12 @@ select g.id, p.id, p.telefone_whatsapp, p.id = 'a0000000-0000-0000-0000-00000000
     ('20000000-0000-0000-0000-000000000004'::uuid, 'a0000000-0000-0000-0000-000000000004'::uuid),
     ('20000000-0000-0000-0000-000000000004'::uuid, 'a0000000-0000-0000-0000-000000000005'::uuid)
   ) as gm (group_id, user_id)
-  join public.wa_groups g on g.id = gm.group_id
-  join public.profiles p on p.id = gm.user_id
+  join imobproj.wa_groups g on g.id = gm.group_id
+  join imobproj.profiles p on p.id = gm.user_id
  where p.telefone_whatsapp is not null
 on conflict (group_id, telefone) do nothing;
 
-insert into public.wa_messages (id, group_id, wa_message_id, direction, author_phone, author_user_id, body, media_path, quoted_wa_message_id, status, tentativas, erro, created_at) values
+insert into imobproj.wa_messages (id, group_id, wa_message_id, direction, author_phone, author_user_id, body, media_path, quoted_wa_message_id, status, tentativas, erro, created_at) values
   ('40000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000001', 'wamid.SEED0001', 'in', '5511900000002', 'a0000000-0000-0000-0000-000000000002',
    'Bom dia! Como estamos com o cronograma do painel?', null, null, 'recebida', 0, null, '2026-10-26 08:55-03'),
   ('40000000-0000-0000-0000-000000000002', '20000000-0000-0000-0000-000000000001', 'wamid.SEED0002', 'out', '5511900000003', 'a0000000-0000-0000-0000-000000000003',

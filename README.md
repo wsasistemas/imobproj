@@ -19,7 +19,7 @@ Supabase (Postgres, Auth, RLS, Storage, Realtime) · React Query · react-hook-f
 - Tela de entrada no design system do Imobenviomassa/ImobDesk (`.mpl-*`), com Supabase Auth, "Lembrar meu
   e-mail", recuperação de senha e middleware protegendo as rotas.
 - Banco completo em [supabase/migrations](supabase/migrations) (enums, tabelas, triggers, numeração de OS,
-  views de avanço, `fn_user_role`, RLS por papel, buckets `documentos` e `evidencias`, Realtime) e
+  views de avanço, `fn_user_role`, RLS por papel, buckets `imobproj-documentos` e `imobproj-evidencias`, Realtime) e
   [supabase/seed.sql](supabase/seed.sql) com o projeto "PRJ-014 · Portal de Tickets Calper".
 - As telas dos módulos ainda abrem "Módulo em construção" (Prompts 1 a 3).
 
@@ -62,19 +62,45 @@ Comandos úteis: `npm run lint`, `npm run build`.
 
 ## Publicar
 
-### Supabase (nuvem)
+### Supabase (nuvem) — schema `imobproj` no projeto compartilhado
 
-1. Crie o projeto em https://supabase.com/dashboard.
-2. Ligue o repositório ao projeto e envie as migrations (o seed é só para o local):
-   ```bash
-   npx supabase login
-   npx supabase link --project-ref <ID_DO_PROJETO>
-   npx supabase db push
+O IMOBPROJ usa o projeto Supabase **Imobsystem** (`ikvjaowvpvxojvcfwnct`), compartilhado pelos sistemas
+IMOBSYSTEMS. Cada sistema tem o próprio schema; o nosso é **`imobproj`** (os clientes do portal, das Edge
+Functions e do app usam `db: { schema: "imobproj" }`). Objetos globais do banco levam o prefixo do sistema:
+
+| Objeto | Nome no IMOBPROJ |
+| --- | --- |
+| Buckets do Storage | `imobproj-documentos`, `imobproj-evidencias`, `imobproj-whatsapp` |
+| Policies em `storage.objects` | `imobproj_<bucket>_<ação>` |
+| Trigger em `auth.users` | `imobproj_on_auth_user_created` (só cria profile de quem tem `sistema = imobproj` no metadado; nunca lança erro) |
+| Segredos do Vault | `imobproj_openwa_*` |
+| Jobs do pg_cron | `imobproj-openwa-reenvio`, `imobproj-push-reenvio` |
+
+**Não use `supabase db push`** nem `migration repair`: o histórico `supabase_migrations` é dos outros
+sistemas. As migrations do IMOBPROJ têm histórico próprio em `imobproj._migracoes`:
+
+```bash
+npx supabase login
+npx supabase link --project-ref ikvjaowvpvxojvcfwnct
+bash scripts/migrar-nuvem.sh --listar   # o que falta
+bash scripts/migrar-nuvem.sh            # aplica as pendentes (cada uma numa transação; o seed nunca vai)
+```
+
+Migration nova: evite `create extension` direto (dispara o event trigger do pg_cron e falha no banco
+compartilhado) — use `if not exists (select 1 from pg_extension ...)` num bloco `do`.
+
+O schema precisa estar em **Exposed schemas** da API (já feito; a lista fica em `pgrst.db_schemas` do papel
+`authenticator`). Para conferir: Dashboard › Project Settings › API.
+
+1. Em **Authentication → URL Configuration**, inclua `https://<dominio-do-imobproj>/auth/callback` em
+   *Redirect URLs* (usado pela recuperação de senha e pelo convite). A *Site URL* é compartilhada: não troque.
+2. Primeiro super admin (o Auth é compartilhado; pode ser uma conta que já existe em outro sistema):
+   ```sql
+   select imobproj.fn_garantir_profile('<email>', '<Nome>');
+   update imobproj.profiles set is_super_admin = true where email = '<email>';
    ```
-3. Em **Authentication → URL Configuration**, configure a *Site URL* com o domínio da Vercel e inclua
-   `https://<seu-dominio>/auth/callback` em *Redirect URLs* (usado pela recuperação de senha).
-4. Crie o primeiro super admin: cadastre o usuário em **Authentication → Users** e rode no SQL Editor
-   `update public.profiles set is_super_admin = true where email = '<email>';`.
+3. Depois disso, a Equipe é administrada pelo portal: quem já tem conta em outro sistema é vinculado na
+   hora (entra com a senha atual); quem não tem recebe convite por e-mail.
 
 ### Vercel
 
@@ -123,7 +149,7 @@ A tela de configuração é **Administração › WhatsApp OpenWA** (`/admin/wha
 
 ```bash
 npx supabase link --project-ref <projeto>
-npx supabase db push                       # aplica a migration (Vault, pg_cron, pg_net, bucket "whatsapp", alertas)
+bash scripts/migrar-nuvem.sh             # aplica a migration (Vault, pg_cron, pg_net, bucket "imobproj-whatsapp", alertas)
 npx supabase functions deploy openwa-webhook openwa-send openwa-groups
 ```
 
@@ -134,12 +160,12 @@ padrão (`SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`); não
 ### Configurar (tela /admin/whatsapp)
 
 1. **Conexão com o OpenWA**: informe a URL do servidor e a API key (`X-API-Key`). A chave vai para o Vault
-   (`openwa_api_key`) e nunca volta ao navegador — a tela só mostra "configurada em <data>". Use **Testar conexão**
+   (`imobproj_openwa_api_key`) e nunca volta ao navegador — a tela só mostra "configurada em <data>". Use **Testar conexão**
    (chama `GET /api/sessions`, timeout de 10 s) e ligue o switch.
 2. **Webhook**: clique em **Gerar segredo** e copie o valor (mostrado uma única vez; "Regenerar" invalida o anterior).
 3. **Sessões por projeto**: cadastre o número do sistema e o **id da sessão no OpenWA** (aparece no teste de conexão).
 4. **Fila de reenvio**: salve a URL das funções como o banco a enxerga (`https://<projeto>.supabase.co/functions/v1`;
-   localmente `http://kong:8000/functions/v1`). Grava `openwa_functions_url` e `openwa_anon_key` no Vault.
+   localmente `http://kong:8000/functions/v1`). Grava `imobproj_openwa_functions_url` e `imobproj_openwa_anon_key` no Vault.
 
 ### Apontar o webhook do OpenWA
 
@@ -173,8 +199,8 @@ curl -X POST http://127.0.0.1:56321/functions/v1/openwa-webhook \
 - Qualquer evento da sessão atualiza `wa_sessions.last_heartbeat` (e `status` pelos eventos `session.*`).
 - `message.received` em grupo cadastrado (`wa_groups.wa_group_id`) → `wa_messages` (`direction='in'`), idempotente por
   `wa_message_id`. Autor resolvido pelo telefone (`wa_group_members` → `profiles.telefone_whatsapp`, com e sem o nono dígito).
-- Mídia → bucket privado **`whatsapp`** (`<project_id>/<group_id>/<AAAA-MM>/<id>.<ext>`). `wa_messages.media_path`
-  sempre no formato **`<bucket>/<caminho>`** (ex.: `whatsapp/...`, `documentos/...`, `evidencias/...`).
+- Mídia → bucket privado **`imobproj-whatsapp`** (`<project_id>/<group_id>/<AAAA-MM>/<id>.<ext>`). `wa_messages.media_path`
+  sempre no formato **`<bucket>/<caminho>`** (ex.: `imobproj-whatsapp/...`, `imobproj-documentos/...`, `imobproj-evidencias/...`).
 - Mídia que cita uma OS aberta do projeto (`#231`, `OS 231`) em grupo com **auto_evidencia** → cópia em
   `evidencias/<project_id>/<os_id>/whatsapp-<id>.<ext>` + `os_evidences` (origem whatsapp). OS aprovada/recusada é ignorada.
 - Texto começando com `#OS` em grupo com **auto_os** → `service_orders` em rascunho (origem whatsapp, título = resto da
@@ -185,9 +211,9 @@ curl -X POST http://127.0.0.1:56321/functions/v1/openwa-webhook \
 
 ### Fila e reenvio (pg_cron)
 
-O job **`openwa-reenvio`** roda a cada 2 minutos (`select public.fn_openwa_processar_fila()`) e, via `pg_net`, chama
+O job **`imobproj-openwa-reenvio`** roda a cada 2 minutos (`select imobproj.fn_openwa_processar_fila()`) e, via `pg_net`, chama
 `openwa-send` para cada mensagem de saída `falhou` (ou `pendente` há mais de 2 min) com menos de 5 tentativas.
-A chamada leva `Authorization: Bearer <anon>` e `x-openwa-cron: <openwa_cron_secret>` (segredo gerado pela migration
+A chamada leva `Authorization: Bearer <anon>` e `x-openwa-cron: <imobproj_openwa_cron_secret>` (segredo gerado pela migration
 no Vault). Cada tentativa soma 1 em `tentativas`; a trava `enviando_desde` evita envio duplo. Na 5ª falha o trigger
 `fn_wa_alerta_falha` grava um registro em **`alertas`** (`tipo = 'whatsapp_envio_falhou'`, só o super admin lê),
 exibido no cartão "Fila de reenvio". Com o OpenWA desligado o cron não envia nada.

@@ -94,7 +94,7 @@ export function PainelOpenwa({ webhookUrl, funcoesUrlSugerida }: { webhookUrl: s
         <CartaoWebhook webhookUrl={webhookUrl} geradoEm={config.data.webhook_secret_gerado_em} />
         <CartaoReenvio
           funcoesUrlSugerida={funcoesUrlSugerida}
-          configurado={temSegredo("openwa_functions_url") && temSegredo("openwa_anon_key") && temSegredo("openwa_cron_secret")}
+          configurado={temSegredo("imobproj_openwa_functions_url") && temSegredo("imobproj_openwa_anon_key") && temSegredo("imobproj_openwa_cron_secret")}
           ativo={config.data.ativo}
         />
       </div>

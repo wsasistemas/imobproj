@@ -42,7 +42,7 @@ type MensagemFila = {
 
 type GrupoFila = { id: string; project_id: string; session_id: string | null; wa_group_id: string | null; ativo: boolean; nome: string };
 
-const BUCKETS = new Set(["whatsapp", "documentos", "evidencias", "atas"]);
+const BUCKETS = new Set(["imobproj-whatsapp", "imobproj-documentos", "imobproj-evidencias"]);
 
 /**
  * media_path = "<bucket>/<caminho>". Caminho que começa por um uuid (sem bucket, como no seed) é do bucket
@@ -52,7 +52,7 @@ export function resolverMidia(mediaPath: string): { bucket: string; caminho: str
   const limpo = mediaPath.replace(/^\/+/, "");
   const [primeiro, ...resto] = limpo.split("/");
   if (BUCKETS.has(primeiro) && resto.length > 0) return { bucket: primeiro, caminho: resto.join("/") };
-  if (/^[0-9a-f-]{36}$/i.test(primeiro)) return { bucket: "evidencias", caminho: limpo };
+  if (/^[0-9a-f-]{36}$/i.test(primeiro)) return { bucket: "imobproj-evidencias", caminho: limpo };
   return { bucket: primeiro, caminho: resto.join("/") };
 }
 

@@ -182,8 +182,8 @@ export async function buscarStatusOpenWa(projetoId: string): Promise<StatusOpenW
 // contrato de enfileirarMensagemWhatsApp) ou sem ele (mídia recebida pelo webhook, gravada em
 // "evidencias/<projeto>/<os>/..." como no seed).
 // ---------------------------------------------------------------------------------------------
-const BUCKETS = ["documentos", "evidencias", "whatsapp"] as const;
-const BUCKET_PADRAO = "evidencias";
+const BUCKETS = ["imobproj-documentos", "imobproj-evidencias", "imobproj-whatsapp"] as const;
+const BUCKET_PADRAO = "imobproj-evidencias";
 
 export function localMidia(caminho: string): { bucket: string; caminho: string } {
   const [primeiro, ...resto] = caminho.replace(/^\/+/, "").split("/");

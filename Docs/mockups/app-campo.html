@@ -1,0 +1,350 @@
+<title>IMOBPROJ App de Campo</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: grade de aparelhos (telas do app Expo) sobre a página; o app usa o tema claro da PARTE B. */
+:root {
+  --pg-bg: #EEF0F3; --pg-fg: #1F2937; --pg-muted: #6B7280; --pg-line: #DCDFE4;
+  /* tokens do app (apps/campo/src/lib/tema.ts) */
+  --cab: #1E2126; --cab-hover: #2A2E35; --cab-texto: #D1D5DB; --cab-rotulo: #9CA3AF;
+  --pri: #D52B36; --pri-suave: #FFF5F5; --pri-borda: #F5C2C5;
+  --fundo: #F5F6F8; --sup: #FFFFFF; --borda: #E5E7EB; --borda-suave: #F0F1F3;
+  --txt: #1F2937; --suave: #6B7280;
+  --ok-bg: #E7F5EC; --ok: #166534; --al-bg: #FEF3C7; --al: #92400E;
+  --in-bg: #E6EEFD; --in: #1D4ED8; --pe-bg: #FDECEC; --pe: #B91C1C;
+  --ro-bg: #F1EAFD; --ro: #6D28D9; --ban-bg: #EFF6FF; --ban-borda: #BFDBFE;
+  --font: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --pg-bg: #14161A; --pg-fg: #E5E7EB; --pg-muted: #9CA3AF; --pg-line: #2A2E35; color-scheme: dark } }
+:root[data-theme="dark"] { --pg-bg: #14161A; --pg-fg: #E5E7EB; --pg-muted: #9CA3AF; --pg-line: #2A2E35; color-scheme: dark }
+
+* { box-sizing: border-box }
+body { background: var(--pg-bg); color: var(--pg-fg); font-family: var(--font); font-size: 14px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px 48px }
+.topo-pg { max-width: 1240px; margin: 0 auto 24px; display: grid; gap: 6px }
+.topo-pg small { font-size: 11.5px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--pg-muted) }
+.topo-pg h1 { margin: 0; font-size: 24px; font-weight: 700; text-wrap: balance }
+.topo-pg p { margin: 0; color: var(--pg-muted); max-width: 70ch; line-height: 1.5 }
+.aviso { display: inline-flex; gap: 8px; align-items: center; margin-top: 6px; font-size: 12.5px; color: var(--pg-muted) }
+.aviso b { background: var(--al-bg); color: var(--al); border-radius: 999px; padding: 2px 9px; font-weight: 600 }
+
+.grade { max-width: 1240px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 32px 24px; justify-items: center }
+figure { margin: 0; display: grid; gap: 10px; justify-items: center; width: 100% }
+figcaption { text-align: center; display: grid; gap: 2px; max-width: 320px }
+figcaption b { font-size: 13.5px }
+figcaption span { color: var(--pg-muted); font-size: 12.5px; line-height: 1.45 }
+
+/* Aparelho */
+.cel { width: 100%; max-width: 320px; height: 660px; border-radius: 40px; padding: 10px; background: #0B0C0E; box-shadow: 0 1px 0 #2A2E35 inset, 0 18px 40px -18px rgba(0,0,0,.45) }
+.tela { height: 100%; border-radius: 31px; overflow: hidden; background: var(--fundo); color: var(--txt); display: flex; flex-direction: column; position: relative; font-size: 14px }
+.status { height: 34px; flex: none; background: var(--cab); color: #fff; display: flex; justify-content: space-between; align-items: center; padding: 0 22px; font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums }
+.status.claro { background: transparent; color: var(--txt) }
+.cab { flex: none; background: var(--cab); color: #fff; display: flex; align-items: center; gap: 10px; padding: 8px 12px 12px 16px; min-height: 52px }
+.cab h2 { margin: 0; font-size: 17px; font-weight: 600; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.voltar { color: #fff; font-size: 22px; line-height: 1; width: 22px }
+.selo-fila { display: inline-flex; gap: 6px; align-items: center; background: var(--cab-hover); color: var(--cab-texto); border-radius: 999px; padding: 5px 10px; font-size: 12px; font-weight: 600; white-space: nowrap }
+.ponto { width: 8px; height: 8px; border-radius: 50% }
+.corpo { flex: 1; overflow: hidden; padding: 14px; display: flex; flex-direction: column; gap: 12px }
+.abas { flex: none; display: flex; background: var(--sup); border-top: 1px solid var(--borda); min-height: 58px; padding: 6px 4px 10px }
+.abas div { flex: 1; display: grid; justify-items: center; gap: 1px; color: var(--suave); font-size: 11px; font-weight: 600 }
+.abas div i { font-style: normal; font-size: 18px; line-height: 1.2 }
+.abas .on { color: var(--pri) }
+
+.rotulo { font-size: 11px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--suave) }
+.titulo { font-size: 20px; font-weight: 700; margin: 0 }
+.sub { color: var(--suave); font-size: 13px; margin: 0 }
+.cartao { background: var(--sup); border: 1px solid var(--borda); border-radius: 14px; overflow: hidden }
+.cartao .in { padding: 13px 14px; display: grid; gap: 5px }
+.linha { display: flex; justify-content: space-between; align-items: center; gap: 8px }
+.num { font-size: 12px; font-weight: 600; color: var(--suave) }
+.os-tit { font-size: 15px; font-weight: 600; line-height: 1.3 }
+.meta { font-size: 13px; color: var(--suave); display: grid; gap: 1px }
+.selo { border-radius: 999px; padding: 3px 9px; font-size: 11.5px; font-weight: 600; white-space: nowrap }
+.s-ag { background: var(--in-bg); color: var(--in) } .s-ex { background: var(--al-bg); color: var(--al) }
+.s-aa { background: var(--ro-bg); color: var(--ro) } .s-ap { background: var(--ok-bg); color: var(--ok) }
+.s-re { background: var(--pe-bg); color: var(--pe) }
+.btn { min-height: 48px; border-radius: 10px; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 600; font-size: 15px; border: 1px solid transparent }
+.btn.p { background: var(--pri); color: #fff }
+.btn.s { background: var(--sup); color: var(--txt); border-color: var(--borda) }
+.btn.g { background: transparent; color: var(--pri) }
+.btn.pe { background: var(--sup); color: var(--pe); border-color: var(--pri-borda) }
+.rodape-c { padding: 0 14px 14px }
+.campo { display: grid; gap: 5px }
+.campo label { font-size: 13px; font-weight: 600 }
+.input { min-height: 46px; border: 1px solid var(--borda); border-radius: 10px; background: var(--sup); padding: 11px 12px; font-size: 14px; color: var(--txt) }
+.input.ph { color: #9CA3AF }
+.input.area { min-height: 72px; line-height: 1.4 }
+.check { display: flex; gap: 10px; align-items: center; font-size: 14px }
+.caixa { width: 22px; height: 22px; border-radius: 6px; border: 1.5px solid var(--borda); background: var(--sup); flex: none; display: grid; place-items: center; font-size: 13px; color: #fff }
+.caixa.on { background: var(--pri); border-color: var(--pri) }
+.kv { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; font-size: 13px }
+.kv dt { color: var(--suave) } .kv dd { margin: 0; text-align: right; font-weight: 500; font-variant-numeric: tabular-nums }
+.banner { background: var(--ban-bg); border: 1px solid var(--ban-borda); border-radius: 12px; padding: 10px 12px; font-size: 12.5px; line-height: 1.45; display: flex; gap: 8px; color: #1E3A8A }
+.banner i { font-style: normal; font-weight: 700; width: 18px; height: 18px; border-radius: 50%; background: var(--in); color: #fff; display: grid; place-items: center; font-size: 11px; flex: none }
+.ev { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px }
+.ev div { border: 1px solid var(--borda); background: var(--sup); border-radius: 10px; min-height: 56px; display: grid; place-items: center; text-align: center; font-size: 11.5px; font-weight: 600; color: var(--txt); padding: 6px 2px; gap: 2px }
+.ev div i { font-style: normal; font-size: 17px }
+.miniaturas { display: flex; gap: 6px }
+.foto { width: 64px; height: 64px; border-radius: 10px; position: relative; overflow: hidden; flex: none }
+.foto span { position: absolute; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,.55); color: #fff; font-size: 7.5px; padding: 2px 3px; line-height: 1.2; font-variant-numeric: tabular-nums }
+.f1 { background: linear-gradient(135deg, #64748B, #334155 60%, #1E293B) }
+.f2 { background: linear-gradient(160deg, #A8A29E, #57534E) }
+.f3 { background: linear-gradient(120deg, #94A3B8, #475569) }
+.ass { background: var(--sup); border: 1px solid var(--borda); display: grid; place-items: center }
+
+/* Login */
+.login { flex: 1; background: var(--cab); color: #fff; display: flex; flex-direction: column; padding: 30px 22px 22px; gap: 22px }
+.marca { display: flex; gap: 12px; align-items: center }
+.logo { width: 46px; height: 46px; border-radius: 50%; background: var(--pri); display: grid; place-items: center; font-weight: 700; font-size: 17px }
+.marca b { display: block; font-size: 18px; letter-spacing: .04em }
+.marca span { color: var(--cab-rotulo); font-size: 13px }
+.login .folha { background: var(--sup); color: var(--txt); border-radius: 18px; padding: 18px; display: grid; gap: 13px }
+.toggle { width: 42px; height: 25px; border-radius: 999px; background: var(--pri); position: relative; flex: none }
+.toggle::after { content: ""; position: absolute; right: 3px; top: 3px; width: 19px; height: 19px; border-radius: 50%; background: #fff }
+.toggle.off { background: #D1D5DB } .toggle.off::after { right: auto; left: 3px }
+.bio { margin-top: auto; display: grid; justify-items: center; gap: 8px; color: var(--cab-texto); font-size: 13px }
+.bio .anel { width: 58px; height: 58px; border-radius: 50%; border: 1.5px solid #3A3F47; display: grid; place-items: center; font-size: 26px }
+
+/* Agenda */
+.semana { display: flex; justify-content: space-between; align-items: center; background: var(--sup); border: 1px solid var(--borda); border-radius: 12px; padding: 8px 12px; font-weight: 600 }
+.semana span { color: var(--suave); font-size: 18px }
+.dia { display: grid; grid-template-columns: 46px 1fr; gap: 10px; align-items: start }
+.dia .d { text-align: center; line-height: 1.1; padding-top: 4px }
+.dia .d b { display: block; font-size: 18px; font-variant-numeric: tabular-nums }
+.dia .d small { color: var(--suave); font-size: 11px; font-weight: 600; text-transform: uppercase }
+.dia.hoje .d b { color: var(--pri) }
+.mini { background: var(--sup); border: 1px solid var(--borda); border-radius: 12px; padding: 9px 11px; display: grid; gap: 3px }
+.mini b { font-size: 13.5px; font-weight: 600 }
+.mini small { color: var(--suave); font-size: 12px }
+.vazio { color: #9CA3AF; font-size: 12.5px; padding: 8px 0 }
+
+/* Assinatura */
+.quadro { flex: 1; background: var(--sup); border: 1.5px dashed var(--borda); border-radius: 14px; position: relative; display: grid; place-items: center }
+.quadro small { position: absolute; bottom: 10px; left: 0; right: 0; text-align: center; color: #9CA3AF; font-size: 11.5px }
+.quadro .base { position: absolute; left: 22px; right: 22px; bottom: 34px; border-top: 1px solid var(--borda) }
+
+/* Perfil */
+.avatar { width: 54px; height: 54px; border-radius: 50%; background: var(--pri-suave); color: var(--pri); border: 1px solid var(--pri-borda); display: grid; place-items: center; font-weight: 700; font-size: 18px; flex: none }
+.item-fila { display: flex; gap: 10px; align-items: center; padding: 10px 14px; border-top: 1px solid var(--borda-suave); font-size: 13px }
+.item-fila:first-child { border-top: 0 }
+.item-fila div { flex: 1; min-width: 0 }
+.item-fila small { display: block; color: var(--suave); font-size: 11.5px }
+.item-fila .erro { color: var(--pe) }
+.dois { display: grid; grid-template-columns: 1fr 1fr; gap: 8px }
+
+@media (prefers-reduced-motion: no-preference) { .pulse { animation: p 1.6s ease-in-out infinite } @keyframes p { 50% { opacity: .35 } } }
+</style>
+
+<header class="topo-pg">
+  <small>IMOBPROJ · Prompt 3</small>
+  <h1>App de campo (Expo): telas para aprovação</h1>
+  <p>Oito telas do app que o técnico usa na rua e o usuário-chave usa para aceitar a OS. Cores, raios e textos seguem o que já está em <code>apps/campo/src</code> (tema da PARTE B adaptado ao celular).</p>
+  <span class="aviso"><b>Dados fictícios</b> Projeto, pessoas, endereços e números inventados para o mockup.</span>
+</header>
+
+<main class="grade">
+
+<!-- 1. Login -->
+<figure>
+  <div class="cel"><div class="tela">
+    <div class="status"><span>07:42</span><span>●●●● 4G ▮</span></div>
+    <div class="login">
+      <div class="marca"><div class="logo">IP</div><div><b>IMOBPROJ</b><span>App de campo</span></div></div>
+      <div class="folha">
+        <div class="campo"><label>E-mail</label><div class="input">rafael.lima@alfatec.com.br</div></div>
+        <div class="campo"><label>Senha</label><div class="input">••••••••••</div></div>
+        <div class="linha"><span style="font-size:14px">Manter conectado</span><span class="toggle"></span></div>
+        <div class="btn p">Entrar</div>
+        <div class="btn g" style="min-height:40px">Esqueci a senha</div>
+      </div>
+      <div class="bio"><div class="anel">◎</div>Desbloquear com biometria</div>
+    </div>
+  </div></div>
+  <figcaption><b>1 · Login</b><span>E-mail e senha, "Manter conectado" e "Esqueci a senha". A biometria aparece a partir do 2º acesso.</span></figcaption>
+</figure>
+
+<!-- 2. Hoje -->
+<figure>
+  <div class="cel"><div class="tela">
+    <div class="status"><span>08:05</span><span>●●●● 4G ▮</span></div>
+    <div class="cab"><h2>Hoje</h2><span class="selo-fila"><span class="ponto" style="background:#22C55E"></span>Sincronizado</span></div>
+    <div class="corpo">
+      <div><p class="titulo">Bom dia, Rafael</p><p class="sub">Quinta-feira, 29 de outubro · 3 OS</p></div>
+      <div class="cartao">
+        <div class="in">
+          <div class="linha"><span class="num">OS 1042 · ALF-ERP</span><span class="selo s-ag">Agendada</span></div>
+          <div class="os-tit">Instalar servidor de backup na matriz</div>
+          <div class="meta"><span>🕒 08:30 – 11:30</span><span>📍 Av. Brasil, 1500 · Sala 12, Campinas</span></div>
+        </div>
+        <div class="rodape-c"><div class="btn p">Fazer check-in</div></div>
+      </div>
+      <div class="cartao">
+        <div class="in">
+          <div class="linha"><span class="num">OS 1043 · ALF-ERP</span><span class="selo s-ag">Agendada</span></div>
+          <div class="os-tit">Treinamento do módulo fiscal com o financeiro</div>
+          <div class="meta"><span>🕒 13:30 – 15:00</span><span>📍 Av. Brasil, 1500 · Sala 4</span></div>
+        </div>
+      </div>
+      <div class="cartao">
+        <div class="in">
+          <div class="linha"><span class="num">OS 1038 · BET-INFRA</span><span class="selo s-re">Recusada</span></div>
+          <div class="os-tit">Trocar switch do 2º andar</div>
+          <div class="meta"><span>🕒 16:00 – 17:00</span><span>📍 R. das Acácias, 88, Valinhos</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="abas"><div class="on"><i>☀︎</i>Hoje</div><div><i>▦</i>Agenda</div><div><i>◉</i>Perfil</div></div>
+  </div></div>
+  <figcaption><b>2 · Hoje</b><span>OS do dia com situação, horário e local. O check-in grava a hora e o GPS.</span></figcaption>
+</figure>
+
+<!-- 3. OS em execução -->
+<figure>
+  <div class="cel"><div class="tela">
+    <div class="status"><span>10:58</span><span>●●○○ 3G ▮</span></div>
+    <div class="cab"><span class="voltar">‹</span><h2>OS 1042</h2><span class="selo-fila"><span class="ponto" style="background:#9CA3AF"></span>Offline · 3</span></div>
+    <div class="corpo" style="gap:10px">
+      <div class="linha"><span class="os-tit" style="font-size:16px">Instalar servidor de backup na matriz</span></div>
+      <div class="linha" style="justify-content:flex-start;gap:6px"><span class="selo s-ex">Em execução</span><span class="num">ALF-ERP · Construtora Alfa</span></div>
+      <div class="cartao"><div class="in"><dl class="kv" style="margin:0">
+        <dt>Horário</dt><dd>08:30 – 11:30</dd>
+        <dt>Local</dt><dd>Av. Brasil, 1500</dd>
+        <dt>Check-in</dt><dd>08:34 · GPS ±12 m</dd>
+      </dl></div></div>
+      <span class="rotulo">Evidências</span>
+      <div class="ev"><div><i>📷</i>Foto</div><div><i>📎</i>Arquivo</div><div><i>🖼</i>Print</div><div><i>✍︎</i>Assinatura</div></div>
+      <div class="miniaturas">
+        <div class="foto f1"><span>29/10 09:12<br>OS 1042</span></div>
+        <div class="foto f2"><span>29/10 10:40<br>OS 1042</span></div>
+        <div class="foto f3"><span>29/10 10:51<br>OS 1042</span></div>
+        <div class="foto ass"><svg width="50" height="26" viewBox="0 0 50 26" fill="none"><path d="M3 18c5-12 8-12 9-4s4 6 7-2 5-8 6 0 5 6 9-3 7-3 13 2" stroke="#1F2937" stroke-width="1.6" stroke-linecap="round"/></svg></div>
+      </div>
+      <div class="campo"><label>Descrição do que foi feito</label><div class="input area">Servidor instalado no rack, backup diário às 23h configurado e restauração testada com a pasta Fiscal.</div></div>
+      <div class="check"><span class="caixa"></span>Fora do escopo</div>
+      <div class="btn p" style="margin-top:auto">Check-out e enviar para aceite</div>
+    </div>
+  </div></div>
+  <figcaption><b>3 · Registrar evidências</b><span>Fotos com marca d'água (data, hora e OS), arquivos, prints e assinatura. Sem rede, tudo vai para a fila.</span></figcaption>
+</figure>
+
+<!-- 4. Assinatura -->
+<figure>
+  <div class="cel"><div class="tela">
+    <div class="status"><span>11:02</span><span>●●○○ 3G ▮</span></div>
+    <div class="cab"><span class="voltar">‹</span><h2>Assinatura do cliente</h2></div>
+    <div class="corpo">
+      <div class="campo"><label>Nome de quem assina</label><div class="input">Carla Mendes</div></div>
+      <div class="quadro">
+        <svg width="210" height="90" viewBox="0 0 210 90" fill="none"><path d="M12 62c14-40 26-44 28-20s10 26 22 2 18-30 20-6 12 22 26-6 18-14 22 0 10 18 22 4 16-12 22-6 14 4 24-2" stroke="#1F2937" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span class="base"></span>
+        <small>Assine com o dedo dentro do quadro</small>
+      </div>
+      <div class="dois"><div class="btn s">Limpar</div><div class="btn p">Salvar assinatura</div></div>
+    </div>
+  </div></div>
+  <figcaption><b>4 · Assinatura</b><span>O cliente assina na tela. A imagem entra como evidência da OS.</span></figcaption>
+</figure>
+
+<!-- 5. Agenda -->
+<figure>
+  <div class="cel"><div class="tela">
+    <div class="status"><span>12:10</span><span>●●●● 4G ▮</span></div>
+    <div class="cab"><h2>Agenda</h2><span class="selo-fila"><span class="ponto pulse" style="background:#FBBF24"></span>2 pendentes</span></div>
+    <div class="corpo" style="gap:10px">
+      <div class="semana"><span>‹</span>26 out – 1 nov<span>›</span></div>
+      <div class="dia"><div class="d"><small>Seg</small><b>26</b></div><div class="mini"><b>OS 1031 · Levantamento de rede</b><small>09:00 – 12:00 · BET-INFRA</small></div></div>
+      <div class="dia"><div class="d"><small>Ter</small><b>27</b></div><div class="vazio">Sem OS</div></div>
+      <div class="dia"><div class="d"><small>Qua</small><b>28</b></div><div class="mini"><b>OS 1036 · Migrar e-mails para o novo domínio</b><small>14:00 – 17:30 · ALF-ERP</small></div></div>
+      <div class="dia hoje"><div class="d"><small>Qui</small><b>29</b></div><div style="display:grid;gap:6px">
+        <div class="mini" style="border-color:var(--pri-borda);background:var(--pri-suave)"><b>OS 1042 · Servidor de backup</b><small>08:30 – 11:30 · em execução</small></div>
+        <div class="mini"><b>OS 1043 · Treinamento fiscal</b><small>13:30 – 15:00</small></div>
+      </div></div>
+      <div class="dia"><div class="d"><small>Sex</small><b>30</b></div><div class="mini"><b>OS 1045 · Revisão do nobreak</b><small>08:00 – 09:30 · GAM-LOG</small></div></div>
+    </div>
+    <div class="abas"><div><i>☀︎</i>Hoje</div><div class="on"><i>▦</i>Agenda</div><div><i>◉</i>Perfil</div></div>
+  </div></div>
+  <figcaption><b>5 · Agenda</b><span>Semana do técnico, de domingo a sábado, com navegação entre semanas.</span></figcaption>
+</figure>
+
+<!-- 6. Aceites (usuário-chave) -->
+<figure>
+  <div class="cel"><div class="tela">
+    <div class="status"><span>14:20</span><span>●●●● 5G ▮</span></div>
+    <div class="cab"><h2>Aceites</h2><span class="selo-fila"><span class="ponto" style="background:#22C55E"></span>Sincronizado</span></div>
+    <div class="corpo">
+      <div><p class="titulo">Aceites</p><p class="sub">OS executadas aguardando sua aprovação</p></div>
+      <div class="cartao"><div class="in">
+        <div class="linha"><span class="num">OS 1042 · ALF-ERP</span><span class="selo s-aa">Aguardando aceite</span></div>
+        <div class="os-tit">Instalar servidor de backup na matriz</div>
+        <div class="meta"><span>👷 Rafael Lima · 2h47 apontadas</span><span>📍 Av. Brasil, 1500 · 4 evidências</span></div>
+      </div></div>
+      <div class="cartao"><div class="in">
+        <div class="linha"><span class="num">OS 1036 · ALF-ERP</span><span class="selo s-aa">Aguardando aceite</span></div>
+        <div class="os-tit">Migrar e-mails para o novo domínio</div>
+        <div class="meta"><span>👷 Juliana Prado · 3h15 apontadas</span><span>⚑ Marcada como fora do escopo</span></div>
+      </div></div>
+      <div class="cartao"><div class="in">
+        <div class="linha"><span class="num">OS 1029 · ALF-ERP</span><span class="selo s-aa">Aguardando aceite</span></div>
+        <div class="os-tit">Configurar VPN para a obra Jardim Sul</div>
+        <div class="meta"><span>👷 Rafael Lima · 1h30 apontadas</span></div>
+      </div></div>
+    </div>
+    <div class="abas"><div><i>☀︎</i>Hoje</div><div><i>▦</i>Agenda</div><div class="on"><i>✓</i>Aceites</div><div><i>◉</i>Perfil</div></div>
+  </div></div>
+  <figcaption><b>6 · Aceites</b><span>Aba que só aparece para diretor e usuário-chave do cliente.</span></figcaption>
+</figure>
+
+<!-- 7. Aceite detalhe -->
+<figure>
+  <div class="cel"><div class="tela">
+    <div class="status"><span>14:23</span><span>●●●● 5G ▮</span></div>
+    <div class="cab"><span class="voltar">‹</span><h2>Aceite · OS 1042</h2></div>
+    <div class="corpo" style="gap:10px">
+      <div class="os-tit" style="font-size:16px">Instalar servidor de backup na matriz</div>
+      <div class="cartao"><div class="in"><dl class="kv" style="margin:0">
+        <dt>Executor</dt><dd>Rafael Lima</dd>
+        <dt>Agendada</dt><dd>29/10 · 08:30 – 11:30</dd>
+        <dt>Check-in</dt><dd>08:34</dd>
+        <dt>Check-out</dt><dd>11:21</dd>
+        <dt>Horas</dt><dd><b>2h47</b></dd>
+      </dl></div></div>
+      <span class="rotulo">Descrição do executor</span>
+      <p style="margin:0;font-size:13px;line-height:1.45">Servidor instalado no rack, backup diário às 23h configurado e restauração testada com a pasta Fiscal.</p>
+      <div class="miniaturas">
+        <div class="foto f1"><span>29/10 09:12</span></div><div class="foto f2"><span>29/10 10:40</span></div><div class="foto f3"><span>29/10 10:51</span></div>
+      </div>
+      <div class="campo"><label>Comentário (obrigatório para recusar)</label><div class="input area ph">Ex.: faltou a foto do painel após a configuração.</div></div>
+      <div class="btn p">Aprovar OS</div>
+      <div class="btn pe">Recusar OS</div>
+    </div>
+  </div></div>
+  <figcaption><b>7 · Aprovar ou recusar</b><span>Horas calculadas pelo check-in e check-out. Recusar exige comentário.</span></figcaption>
+</figure>
+
+<!-- 8. Perfil -->
+<figure>
+  <div class="cel"><div class="tela">
+    <div class="status"><span>18:40</span><span>●●○○ 3G ▮</span></div>
+    <div class="cab"><h2>Perfil</h2><span class="selo-fila" style="background:#7F1D1D"><span class="ponto" style="background:#F87171"></span>2 pendentes</span></div>
+    <div class="corpo" style="gap:10px">
+      <div class="linha" style="justify-content:flex-start;gap:12px"><div class="avatar">RL</div><div><div class="os-tit">Rafael Lima</div><div class="sub">Técnico · Alfa Tecnologia</div></div></div>
+      <span class="rotulo">Dados</span>
+      <div class="cartao"><div class="in"><dl class="kv" style="margin:0">
+        <dt>E-mail</dt><dd>rafael.lima@alfatec.com.br</dd>
+        <dt>WhatsApp</dt><dd>(19) 99876-1234</dd>
+      </dl></div></div>
+      <span class="rotulo">Sincronização</span>
+      <div class="cartao">
+        <div class="item-fila"><span>📷</span><div>Foto · OS 1043<small class="erro">Falhou: arquivo acima de 10 MB</small></div></div>
+        <div class="item-fila"><span>⏱</span><div>Check-out · OS 1043<small>Aguardando rede · 15:02</small></div></div>
+        <div class="rodape-c" style="padding-top:4px"><div class="dois"><div class="btn s">Descartar</div><div class="btn p">Enviar agora</div></div></div>
+      </div>
+      <div class="cartao"><div class="in"><div class="linha"><div><b style="font-size:14px">Desbloquear com biometria</b><div class="sub" style="font-size:12px">Digital ou Face ID ao abrir o app</div></div><span class="toggle"></span></div></div></div>
+      <div class="btn pe" style="margin-top:auto">Sair</div>
+    </div>
+    <div class="abas"><div><i>☀︎</i>Hoje</div><div><i>▦</i>Agenda</div><div class="on"><i>◉</i>Perfil</div></div>
+  </div></div>
+  <figcaption><b>8 · Perfil e fila offline</b><span>Dados do usuário, itens pendentes de envio (com erro em vermelho), biometria e sair.</span></figcaption>
+</figure>
+
+</main>
