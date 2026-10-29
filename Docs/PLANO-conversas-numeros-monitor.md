@@ -95,10 +95,11 @@ Observação: o texto que as pessoas escreveram (ex.: "Enviei a OS 233") aparece
 
 ## Fase 6 — Verificação ponta a ponta
 
-- [ ] 2 projetos, 1 número em cada, 2 grupos: mensagens de um nunca aparecem no outro.
-- [ ] Analista não vê o Monitor; gerente, diretor e super admin veem.
-- [ ] Grupo forçado para 30 dias vai para Anotações e volta com mensagem nova.
-- [ ] Atualizar `docs/mockups` e este plano com o que foi entregue.
+- [x] 2 projetos, 1 número em cada, 2 grupos: mensagens de um nunca aparecem no outro. Verificado pelo teste de banco (número de outro projeto e equipe de fora são recusados) e pelo `openwa-webhook` (número não vinculado é ignorado).
+- [x] Analista não vê o Monitor (nem por `?modo=monitor`); gerente, diretor e super admin veem. Tela conferida como super admin e como analista; banco conferido para os quatro papéis.
+- [x] Grupo forçado para 30 dias vai para Anotações e volta com mensagem nova (teste de banco, cenários 4 e 7; tela conferida com grupo do seed).
+- [x] Mockup e plano atualizados com o que foi entregue.
+- [ ] Teste com mensagens reais na nuvem, depois do `migrar-nuvem.sh` e do deploy do `openwa-webhook` (depende do Wagner).
 
 ## Fase 7 — Base de Conhecimento: banco e indexação (depois de aprovar K1–K6)
 
