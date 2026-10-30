@@ -16,7 +16,7 @@ Checklist binário: cada item está **feito** ou **não feito**. Nada de "parcia
 | D7 | **Número de demonstração:** `wsa-sistemas` (+55 21 99477-1524) é da WSA Sistemas e fica no projeto **Demonstração WSA** (contratante WSA Sistemas). Projeto real ganha número próprio. |
 | D8 | **Anotações da equipe:** todos os membros da equipe do grupo veem as anotações dela; gerente, diretor e super admin veem as de todas as equipes do projeto. |
 
-## Base de Conhecimento — recomendações aguardando aprovação (K1–K6)
+## Base de Conhecimento — recomendações aprovadas pelo Wagner em 29/10/2026 (K1–K6)
 
 | # | Recomendação |
 |---|---|
@@ -101,14 +101,16 @@ Observação: o texto que as pessoas escreveram (ex.: "Enviei a OS 233") aparece
 - [x] Mockup e plano atualizados com o que foi entregue.
 - [ ] Teste com mensagens reais na nuvem, depois do `migrar-nuvem.sh` e do deploy do `openwa-webhook` (depende do Wagner).
 
-## Fase 7 — Base de Conhecimento: banco e indexação (depois de aprovar K1–K6)
+## Fase 7 — Base de Conhecimento: banco e indexação (`20261101000200_base_conhecimento.sql`)
 
-- [ ] Verificar se a extensão `vector` pode ser ligada no ikvj; se não, seguir com `tsvector` (K3).
-- [ ] Tabelas `kb_trechos` (fonte, id, projeto, equipe, texto, vetor/tsvector, atualizado_em), `kb_fila`, `kb_perguntas` (pergunta, resposta, fontes, 👍/👎).
-- [ ] Gatilhos que põem na fila: OS aprovada, ata aprovada/publicada, documento aprovado/vivo, grupo movido para Anotações.
-- [ ] Edge Function `kb-indexar` (pg_cron 1 min): monta o texto, mascara telefone/CPF, gera o vetor.
-- [ ] `kb_buscar(p_pergunta_vetor, p_projeto, p_fontes)` SECURITY INVOKER: só volta trecho que o usuário pode ver (RLS das tabelas de origem).
-- [ ] Teste de banco: prestador não recebe OS de outro executor; membro de A não recebe trecho de B.
+- [x] Verificar se a extensão `vector` pode ser ligada no ikvj: pgvector 0.8.0 disponível, a migration liga (`create extension if not exists vector with schema extensions`).
+- [x] Tabelas `kb_trechos` (fonte, id, projeto, equipe, título, texto, vetor 768), `kb_fila`, `kb_perguntas` (pergunta, resposta, fontes, 👍/👎; o usuário só altera a avaliação).
+- [x] Gatilhos que põem na fila: OS aprovada, ata publicada/aprovada, documento aprovado/vivo, grupo movido para Anotações; também quando o item deixa de valer (sai da base) ou é apagado.
+- [x] `fn_kb_preparar` monta o texto (K1: documento só com arquivo anexo fica fora), mascara telefone/CPF (`fn_kb_mascarar`) e divide em trechos de até 2.500 caracteres.
+- [x] Edge Function `kb-indexar` (pg_cron `imobproj-kb-indexar`, 1 min, só dispara com fila): gera o vetor no Gemini `gemini-embedding-001` (768) e grava com `fn_kb_gravar`; falha volta para a fila (até 5 tentativas).
+- [x] `kb_buscar(p_pergunta_vetor, p_projeto, p_fontes, p_limite)` SECURITY INVOKER: a RLS de `kb_trechos` (`fn_kb_pode_ver`) repete a das tabelas de origem.
+- [x] Teste de banco `supabase/tests/base_conhecimento.sql` (11 cenários): prestador não recebe OS de outro executor; membro de A não recebe trecho de B; anotação só para a equipe + gerente; grupo que volta para Conversas e OS recusada saem da base.
+- [ ] Indexação real com o Gemini: depende da chave `imobproj_gemini_api_key` no Vault (local e nuvem). Sem a chave, a `kb-indexar` responde 503 e não gasta tentativa (conferido no local).
 
 ## Fase 8 — Base de Conhecimento: tela de chat
 
@@ -123,5 +125,7 @@ Observação: o texto que as pessoas escreveram (ex.: "Enviei a OS 233") aparece
 - Na nuvem: rodar `supabase/snippets/demonstracao-wsa.sql` e conectar `wsa-sistemas` ao DEMO-WSA pela tela (o item de registro da Fase 2 fica aberto até isso).
 - Depois da Fase 1: `bash scripts/migrar-nuvem.sh` e `npx supabase functions deploy openwa-webhook`.
 
-- Aprovar K1–K6 da Base de Conhecimento.
+- Pôr a chave do Gemini no Vault: `select vault.create_secret('<COLOQUE_A_CHAVE_AQUI>', 'imobproj_gemini_api_key');` (local e nuvem).
+- Na nuvem faltam `imobproj_openwa_functions_url` e `imobproj_openwa_anon_key` no Vault: sem eles nenhum cron chama Edge Function (push, kb-indexar).
+- `npx supabase functions deploy kb-indexar`.
 - Rodar `bash scripts/migrar-nuvem.sh` depois da Fase 1.
