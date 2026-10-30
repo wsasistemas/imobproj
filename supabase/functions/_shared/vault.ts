@@ -7,7 +7,8 @@ export type NomeSegredo =
   | "imobproj_openwa_webhook_secret"
   | "imobproj_openwa_functions_url"
   | "imobproj_openwa_anon_key"
-  | "imobproj_openwa_cron_secret";
+  | "imobproj_openwa_cron_secret"
+  | "imobproj_gemini_api_key";
 
 export async function lerSegredo(admin: Cliente, nome: NomeSegredo): Promise<string | null> {
   const { data, error } = await admin.rpc("fn_openwa_segredo", { p_nome: nome });
