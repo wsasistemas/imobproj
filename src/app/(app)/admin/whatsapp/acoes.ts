@@ -453,6 +453,10 @@ export async function salvarSessao(entrada: unknown): Promise<ResultadoAcao<{ id
   const negado = await garantirSuperAdmin();
   if (negado) return negado;
 
+  // Id colado à mão pode vir cortado (ex.: "a00e4333-110"): só grava sessão que o OpenWA reconhece.
+  const existe = await chamarOpenwa<SessaoApi>("GET", `/sessions/${encodeURIComponent(v.data.openwaSessionId)}`);
+  if (!existe.ok) return falha(`O OpenWA não reconheceu a sessão "${v.data.openwaSessionId}": ${existe.erro}`);
+
   const supabase = await createClient();
   const { data: cfg } = await supabase.from("openwa_config").select("url").eq("id", true).maybeSingle();
   const campos = {
