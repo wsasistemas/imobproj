@@ -185,6 +185,45 @@ export async function configurarReenvio(entrada: unknown): Promise<ResultadoAcao
   return sucesso(null);
 }
 
+// ---------------------------------------------------------------- Base de Conhecimento (Gemini)
+
+/**
+ * Chave do Gemini usada pela kb-indexar/kb-perguntar. Antes de gravar no Vault, gera um vetor de teste: chave
+ * recusada pelo Google não é salva. O valor nunca volta para a tela.
+ */
+export async function salvarChaveGemini(entrada: unknown): Promise<ResultadoAcao<null>> {
+  const v = z
+    .object({ chave: z.string().trim().min(20, "Chave curta demais.").max(200, "Chave longa demais.") })
+    .safeParse(entrada);
+  if (!v.success) return falha(primeiroErro(v.error));
+  const negado = await garantirSuperAdmin();
+  if (negado) return negado;
+
+  try {
+    const resp = await fetch(
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-goog-api-key": v.data.chave },
+        body: JSON.stringify({ content: { parts: [{ text: "teste" }] }, outputDimensionality: 768 }),
+        signal: AbortSignal.timeout(TIMEOUT_TESTE_MS),
+        cache: "no-store",
+      },
+    );
+    if (!resp.ok) {
+      const corpo = (await resp.json().catch(() => ({}))) as { error?: { message?: string } };
+      return falha(`O Gemini recusou a chave (${resp.status}): ${corpo.error?.message ?? "sem detalhe"}`);
+    }
+  } catch (e) {
+    return falha(`Não foi possível testar a chave no Gemini: ${e instanceof Error ? e.message : String(e)}`);
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("fn_openwa_definir_segredo", { p_nome: "imobproj_gemini_api_key", p_valor: v.data.chave });
+  if (error) return falha(mensagemErroBanco(error));
+  return sucesso(null);
+}
+
 // ---------------------------------------------------------------- sessões no OpenWA (QR / sessão existente)
 
 const TIMEOUT_OPENWA_MS = 15_000;

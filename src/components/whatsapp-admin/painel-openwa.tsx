@@ -24,7 +24,7 @@ import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
-import { CartaoReenvio, CartaoWebhook } from "./cartoes-webhook-reenvio";
+import { CartaoGemini, CartaoReenvio, CartaoWebhook } from "./cartoes-webhook-reenvio";
 import { SecaoGrupos, SecaoSessoes } from "./sessoes-grupos";
 import { SkeletonPainelOpenwa } from "./skeleton";
 import type { ConfigOpenwaTela, SegredoStatus } from "./tipos";
@@ -98,6 +98,10 @@ export function PainelOpenwa({ webhookUrl, funcoesUrlSugerida }: { webhookUrl: s
           ativo={config.data.ativo}
         />
       </div>
+
+      <CartaoGemini
+        atualizadaEm={(segredos.data ?? []).find((s) => s.nome === "imobproj_gemini_api_key")?.atualizado_em ?? null}
+      />
 
       <SecaoSessoes />
       <SecaoGrupos ativo={config.data.ativo} />

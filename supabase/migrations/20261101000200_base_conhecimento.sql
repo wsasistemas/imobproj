@@ -582,6 +582,56 @@ $$;
 revoke all on function imobproj.fn_openwa_segredo(text) from public, anon, authenticated;
 grant execute on function imobproj.fn_openwa_segredo(text) to service_role;
 
+-- O super admin grava a chave pela tela WhatsApp OpenWA (cartão "Chave do Gemini").
+create or replace function imobproj.fn_openwa_definir_segredo(p_nome text, p_valor text)
+returns uuid
+language plpgsql
+volatile
+security definer
+set search_path = imobproj, vault
+as $$
+declare
+  v_id uuid;
+begin
+  if not imobproj.fn_openwa_pode_gerir() then
+    raise exception 'Apenas o super admin pode alterar a configuração do OpenWA' using errcode = '42501';
+  end if;
+  if p_nome not in ('imobproj_openwa_api_key', 'imobproj_openwa_webhook_secret', 'imobproj_openwa_functions_url',
+                    'imobproj_openwa_anon_key', 'imobproj_openwa_cron_secret', 'imobproj_gemini_api_key') then
+    raise exception 'Segredo desconhecido: %', p_nome using errcode = '22023';
+  end if;
+  if coalesce(btrim(p_valor), '') = '' then
+    raise exception 'Informe o valor do segredo' using errcode = '23514';
+  end if;
+
+  select s.id into v_id from vault.secrets s where s.name = p_nome;
+  if v_id is null then
+    v_id := vault.create_secret(btrim(p_valor), p_nome, 'IMOBPROJ · OpenWA');
+  else
+    perform vault.update_secret(v_id, btrim(p_valor), p_nome, 'IMOBPROJ · OpenWA');
+  end if;
+  return v_id;
+end;
+$$;
+revoke all on function imobproj.fn_openwa_definir_segredo(text, text) from public, anon;
+grant execute on function imobproj.fn_openwa_definir_segredo(text, text) to authenticated, service_role;
+
+create or replace function imobproj.fn_openwa_segredos_status()
+returns table (nome text, atualizado_em timestamptz)
+language sql
+stable
+security definer
+set search_path = imobproj, vault
+as $$
+  select s.name::text, s.updated_at
+    from vault.secrets s
+   where imobproj.fn_openwa_pode_gerir()
+     and s.name in ('imobproj_openwa_api_key', 'imobproj_openwa_webhook_secret', 'imobproj_openwa_functions_url',
+                    'imobproj_openwa_anon_key', 'imobproj_openwa_cron_secret', 'imobproj_gemini_api_key');
+$$;
+revoke all on function imobproj.fn_openwa_segredos_status() from public, anon;
+grant execute on function imobproj.fn_openwa_segredos_status() to authenticated, service_role;
+
 -- -----------------------------------------------------------------------------
 -- Carga inicial: tudo o que já vale entra na fila
 -- -----------------------------------------------------------------------------

@@ -125,7 +125,7 @@ Observação: o texto que as pessoas escreveram (ex.: "Enviei a OS 233") aparece
 - Na nuvem: rodar `supabase/snippets/demonstracao-wsa.sql` e conectar `wsa-sistemas` ao DEMO-WSA pela tela (o item de registro da Fase 2 fica aberto até isso).
 - Depois da Fase 1: `bash scripts/migrar-nuvem.sh` e `npx supabase functions deploy openwa-webhook`.
 
-- Pôr a chave do Gemini no Vault: `select vault.create_secret('<COLOQUE_A_CHAVE_AQUI>', 'imobproj_gemini_api_key');` (local e nuvem).
-- Na nuvem faltam `imobproj_openwa_functions_url` e `imobproj_openwa_anon_key` no Vault: sem eles nenhum cron chama Edge Function (push, kb-indexar).
+- Pôr a chave do Gemini: tela WhatsApp OpenWA › cartão "Chave do Gemini" (super admin; a chave é testada no Gemini antes de ir para o Vault), local e nuvem.
+- Na nuvem faltam `imobproj_openwa_functions_url` e `imobproj_openwa_anon_key` no Vault: tela WhatsApp OpenWA › cartão "Fila de reenvio" › Salvar (`https://ikvjaowvpvxojvcfwnct.supabase.co/functions/v1`). Sem eles nenhum cron chama Edge Function (push, kb-indexar).
 - `npx supabase functions deploy kb-indexar`.
 - Rodar `bash scripts/migrar-nuvem.sh` depois da Fase 1.

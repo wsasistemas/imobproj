@@ -1,10 +1,10 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { BellRing, Copy, Loader2, RotateCw, ShieldCheck, Webhook } from "lucide-react";
+import { BellRing, Copy, Loader2, RotateCw, ShieldCheck, Sparkles, Webhook } from "lucide-react";
 import { useId, useState } from "react";
 import { toast } from "sonner";
-import { configurarReenvio, gerarSegredoWebhook, marcarAlertasLidos } from "@/app/(app)/admin/whatsapp/acoes";
+import { configurarReenvio, gerarSegredoWebhook, marcarAlertasLidos, salvarChaveGemini } from "@/app/(app)/admin/whatsapp/acoes";
 import { IconeMenu } from "@/components/shell/icone-menu";
 import {
   AlertDialog,
@@ -299,6 +299,75 @@ export function CartaoReenvio({
           <p className="text-[12.5px] text-muted-foreground">
             No Supabase local é <code>http://kong:8000/functions/v1</code>; na nuvem,{" "}
             <code>https://&lt;projeto&gt;.supabase.co/functions/v1</code>. Grava a URL e a chave anon no Vault.
+          </p>
+        </form>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ---------------------------------------------------------------- Base de Conhecimento
+
+export function CartaoGemini({ atualizadaEm }: { atualizadaEm: string | null }) {
+  const ids = useId();
+  const queryClient = useQueryClient();
+  const [chave, setChave] = useState("");
+
+  const salvar = useMutation({
+    mutationFn: () => executar(salvarChaveGemini({ chave })),
+    onSuccess: () => {
+      setChave("");
+      toast.success("Chave do Gemini testada e salva no Vault");
+      void queryClient.invalidateQueries({ queryKey: [...CHAVE_ADMIN_WHATSAPP, "segredos"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center gap-3">
+          <IconeMenu icon={Sparkles} cor="var(--sys-purple)" tamanho={36} />
+          <div className="grid gap-0.5">
+            <CardTitle>Chave do Gemini</CardTitle>
+            <CardDescription>
+              Usada pela Base de Conhecimento para indexar OS, atas, documentos e anotações e para responder às perguntas.
+            </CardDescription>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <form
+          className="grid gap-1.5"
+          onSubmit={(e) => {
+            e.preventDefault();
+            salvar.mutate();
+          }}
+        >
+          <div className="flex items-center justify-between gap-2">
+            <Label htmlFor={`${ids}-gemini`}>{atualizadaEm ? "Substituir a chave" : "API key do Google AI Studio"}</Label>
+            <Badge variant={atualizadaEm ? "success" : "warning"}>
+              {atualizadaEm ? `Configurada · ${dataHora(atualizadaEm)}` : "Não configurada"}
+            </Badge>
+          </div>
+          <div className="flex gap-2">
+            <Input
+              id={`${ids}-gemini`}
+              type="password"
+              value={chave}
+              onChange={(e) => setChave(e.target.value)}
+              placeholder={atualizadaEm ? "•••••••• (gravada; cole outra para trocar)" : "Cole a chave aqui"}
+              className="font-mono text-[12.5px]"
+              autoComplete="off"
+            />
+            <Button type="submit" variant="outline" disabled={chave.trim().length < 20 || salvar.isPending}>
+              {salvar.isPending && <Loader2 className="animate-spin" aria-hidden="true" />}
+              Testar e salvar
+            </Button>
+          </div>
+          <p className="text-[12.5px] text-muted-foreground">
+            Gere em <code>aistudio.google.com/apikey</code>. A chave é testada no Gemini antes de ir para o Vault e não volta
+            para a tela.
           </p>
         </form>
       </CardContent>
