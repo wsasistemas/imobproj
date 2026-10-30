@@ -95,3 +95,6 @@ verify_jwt = true
 # Cron (Bearer anon + x-openwa-cron) ou service_role: a própria função confere quem chamou.
 [functions.kb-indexar]
 verify_jwt = true
+
+[functions.openwa-saude]
+verify_jwt = true
